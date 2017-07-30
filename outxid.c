@@ -1,0 +1,148 @@
+/*
+ *  Copyright (c) 2016 Thierry Leconte
+ *
+ *   
+ *   This code is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License version 2
+ *   published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Library General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this library; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <time.h>
+#include "acars.h"
+#include "vdlm2.h"
+
+extern int verbose;
+
+void outpublicgr(unsigned char *p, int len)
+{
+    int i;
+
+    i = 0;
+    do {
+        short len = p[i + 1];
+
+        switch (p[i]) {
+        case 0x01:
+            break;
+        case 0x09:
+            fprintf(logfd, "Timer T1 downlink\n");
+            break;
+        default:
+            if (verbose > 1) {
+                fprintf(logfd, "unknown public id %02x\n", p[i]);
+                dumpdata(&(p[i]), len + 2);
+            }
+            break;
+        }
+        i += 2 + len;
+    } while (i < len);
+}
+
+void outprivategr(unsigned char *p, int len)
+{
+    int i;
+
+    i = 0;
+    do {
+        short len = p[i + 1];
+
+        switch (p[i]) {
+        case 0:
+            break;
+        case 0x01:
+            fprintf(logfd, "Connection management %02x\n", p[i + 2]);
+            break;
+        case 0x02:
+            fprintf(logfd, "Signal quality %01d\n", p[i + 2]);
+            break;
+        case 0x03:
+            fprintf(logfd, "XID sequencing %1d:%1d\n", p[i + 2] >> 4, p[i + 2] & 0x7);
+            break;
+        case 0x04:
+            fprintf(logfd, "Specific options %02x\n", p[i + 2]);
+            break;
+        case 0x05:
+            fprintf(logfd, "Expedited subnetwork connection %02x\n", p[i + 2]);
+            break;
+        case 0x06:
+            fprintf(logfd, "LCR cause %02x\n", p[i + 2]);
+            break;
+        case 0x81:
+            fprintf(logfd, "Modulation support %02x\n", p[i + 2]);
+            break;
+        case 0x82:{
+                unsigned int addr;
+                addr =
+                    (reversebits(p[i + 2] >> 2, 6) << 21) | (reversebits(p[i + 3] >> 1, 7) << 14) |
+                    (reversebits(p[i + 4] >> 1, 7) << 7) | (reversebits(p[i + 5] >> 1, 7));
+                fprintf(logfd, "Acceptable alternative ground station %06x\n", addr & 0xffffff);
+                break;
+            }
+        case 0x83:{
+                oooi_t oooi;
+                memset(&oooi, 0, sizeof(oooi));
+                memcpy(oooi.da, &(p[i + 2]), 4);
+                fprintf(logfd, "Destination airport %s\n", oooi.da);
+                break;
+            }
+        case 0x84:{
+                int alt;
+                float lat, lon;
+                lat = ((p[i + 2] << 4) | (p[i + 3] >> 4)) / 10.0;
+                lon = (int)((((unsigned int)(p[i + 3]) & 0xf) << 8) | (unsigned int)p[i + 4]) / 10.0;
+                alt = p[i + 5] * 1000;
+                fprintf(logfd, "Aircraft Location  %04.1f %05.1f alt:%d\n", lat, lon, alt);
+                break;
+            }
+        default:
+            if (verbose > 1) {
+                fprintf(logfd, "unknown private id %02x\n", p[i]);
+                dumpdata(&(p[i]), len + 2);
+            }
+
+            break;
+        }
+        i += 2 + len;
+    } while (i < len);
+}
+
+void outxid(unsigned char *p, int len)
+{
+    int i;
+
+    fprintf(logfd, "XID\n");
+    i = 0;
+    do {
+        short glen = p[i + 1] * 256 + p[i + 2];
+
+        if (p[i] == 0x80) {
+            outpublicgr(&(p[i + 3]), glen);
+            i += 3 + glen;
+            continue;
+        }
+        if (p[i] == 0xf0) {
+            outprivategr(&(p[i + 3]), glen);
+            i += 3 + glen;
+            continue;
+        }
+        if (verbose > 1) {
+            fprintf(logfd, "unknown group %02x\n", p[i]);
+            dumpdata(&(p[i]), glen + 3);
+        }
+        i += 3 + glen;
+    } while (i < len);
+}
+
