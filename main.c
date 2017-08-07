@@ -25,15 +25,20 @@
 #include <signal.h>
 #include <string.h>
 #include <getopt.h>
+#include <math.h>
 #include <sys/types.h>
 
 #include "vdlm2.h"
 
 int verbose = 1;
-int gain = 1000;
 int itype = -1;
+#ifdef WITH_RTL
+int gain = 1000;
+int ppm = 0;
+#endif
 
-channel_t channel;
+channel_t channel[MAXNBCHANNELS];
+int nbch;
 
 FILE *logfd;
 
@@ -63,21 +68,36 @@ static void sighandler(int signum)
 static int infd;
 int initFile(char *file)
 {
+    channel_t *ch = &(channel[0]);
+    int ind;
+    float AMFreq;
+
+    nbch=1;
+
     infd = open(file, O_RDONLY);
     if (infd < 0) {
         fprintf(stderr, "could not open data\n ");
         return 1;
     }
+
+    ch->wf = malloc(RTLMULT * sizeof(float complex));
+
+    AMFreq = (10500*2*RTLDWN) / (float)(RTLINRATE) * 2.0 * M_PI;
+    for (ind = 0; ind < RTLMULT; ind++) {
+           ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT/127.5;
+    }
+
     return 0;
 }
 
 int runFileSample(void)
 {
-    unsigned char buffer[RTLMULT * 512];
+    unsigned char buffer[RTLINBUFSZ];
+
     size_t rd;
 
     do {
-        rd = read(infd, buffer, RTLMULT * 512);
+        rd = read(infd, buffer, RTLINBUFSZ);
         if (rd)
             in_callback(buffer, rd, NULL);
     } while (rd);
@@ -93,16 +113,17 @@ int main(int argc, char **argv)
     int rdev;
     double freq;
 
+    nbch=0;
     logfd = stderr;
 
-    while ((c = getopt(argc, argv, "vVt:r:g:l:")) != EOF) {
+    while ((c = getopt(argc, argv, "vVt:rp:g:l:")) != EOF) {
         switch (c) {
         case 'v':
             verbose = 2;
             break;
         case 't':
+            res = initFile(optarg);
             itype = 1;
-            fname = optarg;
             break;
         case 'l':
             logfd = fopen(optarg, "w+");
@@ -113,38 +134,20 @@ int main(int argc, char **argv)
             break;
 #ifdef WITH_RTL
         case 'r':
+            res = initRtl(argv, optind);
             itype = 0;
-            rdev = atoi(optarg);
             break;
         case 'g':
             gain = atoi(optarg);
+            break;
+        case 'p':
+            ppm = atoi(optarg);
             break;
 #endif
         default:
             usage();
             return (1);
         }
-    }
-
-    switch (itype) {
-#ifdef WITH_RTL
-    case 0:
-    	if (optind >= argc) {
-        	fprintf(stderr, "Need frequency (ex: 136.975)\n\n");
-		usage();
-        	exit(1);
-    	}
-    	freq = atof(argv[optind]);
-        res = initRtl(rdev, gain, (int)(freq * 1e6));
-        break;
-#endif
-    case 1:
-        res = initFile(fname);
-        break;
-    default:
-        fprintf(stderr, "Need input\n\n");
-	usage();
-        exit(1);
     }
 
     if (res) {
@@ -159,9 +162,16 @@ int main(int argc, char **argv)
     sigaction(SIGTERM, &sigact, NULL);
     sigaction(SIGQUIT, &sigact, NULL);
 
-    initD8psk();
+    for (n = 0; n < nbch; n++) {
+         channel[n].chn = n;
 
-    initVdlm2();
+         res = initD8psk(&(channel[n]));
+         if (res)
+                   break;
+         res = initVdlm2(&(channel[n]));
+         if (res)
+                  break;
+    }
 
 #if DEBUG
     initSndWrite();
@@ -179,7 +189,7 @@ int main(int argc, char **argv)
     }
 
     stopVdlm2();
-    sleep(1);
+
     exit(1);
 
 }

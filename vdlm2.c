@@ -157,18 +157,18 @@ static void *blk_thread(void *arg)
         }
 
         if (verbose > 1)
-            fprintf(logfd, "received len:%d\n", k);
+            fprintf(logfd, "#%01d received len:%d\n", blk->chn,k);
 
         if (fec < 0) {
             if (verbose > 1)
-                fprintf(logfd, "error fec\n");
+                fprintf(logfd, "#%01d error fec\n",blk->chn);
             free(blk);
             continue;
         }
 
         if (k < 13) {
             if (verbose > 1)
-                fprintf(logfd, "error too short\n");
+                fprintf(logfd, "#%01d error too short\n",blk->chn);
             continue;
         }
 
@@ -193,7 +193,7 @@ static void *blk_thread(void *arg)
                 (reversebits(hdata[5] >> 2, 6) << 21) | (reversebits(hdata[6] >> 1, 7) << 14) |
                 (reversebits(hdata[7] >> 1, 7) << 7) | (reversebits(hdata[8] >> 1, 7));
 
-            fprintf(logfd, "%s from %s %06x to %06x\n", rep ? "response" : "command",
+            fprintf(logfd, "#%01d %s from %s %06x to %06x\n", blk->chn,rep ? "response" : "command",
                     (hdata[1] & 2) ? "ground" : "airborne", fraddr & 0xffffff, toaddr & 0xffffff);
 
             fprintf(logfd, "Link Control : ");
@@ -245,19 +245,20 @@ static void *blk_thread(void *arg)
     return NULL;
 }
 
-int initVdlm2(char *dbname)
+int initVdlm2(channel_t *ch)
 {
     pthread_t th;
-    int chn;
 
-    channel.state = WSYNC;
+    ch->state = WSYNC;
+    ch->blk = calloc(sizeof(msgblk_t), 1);
+    ch->blk->chn=ch->chn;
 
-    channel.blk = calloc(sizeof(msgblk_t), 1);
+    if(ch->chn==0) {
+    	pthread_mutex_init(&blkmtx, NULL);
+    	pthread_cond_init(&blkwcd, NULL);
 
-    pthread_mutex_init(&blkmtx, NULL);
-    pthread_cond_init(&blkwcd, NULL);
-
-    pthread_create(&th, NULL, blk_thread, NULL);
+    	pthread_create(&th, NULL, blk_thread, NULL);
+    }
 
     return 0;
 }
@@ -269,19 +270,20 @@ void stopVdlm2(void)
         sleep(1);
 }
 
-void decodeVdlm2()
+void decodeVdlm2(channel_t *ch)
 {
     pthread_mutex_lock(&blkmtx);
-    channel.blk->prev = NULL;
+    ch->blk->prev = NULL;
     if (blkq_s)
-        blkq_s->prev = channel.blk;
-    blkq_s = channel.blk;
+        blkq_s->prev = ch->blk;
+    blkq_s = ch->blk;
     if (blkq_e == NULL)
         blkq_e = blkq_s;
     pthread_cond_signal(&blkwcd);
     pthread_mutex_unlock(&blkmtx);
 
-    channel.blk = calloc(sizeof(msgblk_t), 1);
+    ch->blk = calloc(sizeof(msgblk_t), 1);
+    ch->blk->chn=ch->chn;
 
     return;
 }

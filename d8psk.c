@@ -28,14 +28,14 @@
 static struct timespec ftime;
 static unsigned int ink;
 
-int initD8psk()
+int initD8psk(channel_t *ch)
 {
     ink = 0;
-    channel.Phidx = 0;
-    channel.df = 0;
-    channel.perr = 100;
-    channel.P1 = 0;
-    channel.off = 0;
+    ch->Phidx = 0;
+    ch->df = 0;
+    ch->perr = 100;
+    ch->P1 = 0;
+    ch->off = 0;
 
     return 0;
 }
@@ -55,12 +55,12 @@ unsigned int reversebits(const unsigned int bits, const int n)
     return out;
 }
 
-static float descrambler(const float V)
+static inline float descrambler(channel_t *ch,const float V)
 {
     int b;
 
-    b = (channel.scrambler ^ (channel.scrambler >> 14)) & 1;
-    channel.scrambler = (channel.scrambler << 1) | b;
+    b = (ch->scrambler ^ (ch->scrambler >> 14)) & 1;
+    ch->scrambler = (ch->scrambler << 1) | b;
     if (b)
         return (1.0 - V);
     else
@@ -68,13 +68,13 @@ static float descrambler(const float V)
 
 }
 
-static inline void putbit(const float SV)
+static inline void putbit(channel_t *ch,const float SV)
 {
     float V;
 
-    V = descrambler(SV);
+    V = descrambler(ch,SV);
 
-    switch (channel.state) {
+    switch (ch->state) {
     case WSYNC:
         /* ???? */
         return;
@@ -83,16 +83,16 @@ static inline void putbit(const float SV)
             unsigned int bits, len;
             float vp;
 
-            viterbi_add(V, channel.nbits);
-            channel.nbits++;
-            if (channel.nbits < 25)
+            viterbi_add(V, ch->nbits);
+            ch->nbits++;
+            if (ch->nbits < 25)
                 return;
 
             vp = viterbi_end(&bits);
 
             if (vp < 0.04) {
                 //fprintf(stderr,"error viterbi\n");
-                channel.state = WSYNC;
+                ch->state = WSYNC;
                 return;
             }
 
@@ -102,68 +102,69 @@ static inline void putbit(const float SV)
 
             if (len < 13 * 8) {
                 //fprintf(stderr,"error too short\n");
-                channel.state = WSYNC;
+                ch->state = WSYNC;
                 return;
             }
 
-            channel.blk->nbrow = len / 1992 + 1;
-            channel.blk->nbbyte = (len % 1992 + 7) / 8;
+            ch->blk->nbrow = len / 1992 + 1;
+            ch->blk->nbbyte = (len % 1992 + 7) / 8;
 
-            if (channel.blk->nbrow > 65) {
+            if (ch->blk->nbrow > 65) {
                 //fprintf(stderr,"error too long\n");
-                channel.state = WSYNC;
+                ch->state = WSYNC;
                 return;
             }
-            //fprintf(stderr,"row %d byte %d v: %f\n",channel.blk->nbrow,channel.blk->nbbyte,vp);
+            //fprintf(stderr,"row %d byte %d v: %f\n",ch->blk->nbrow,ch->blk->nbbyte,vp);
 
-            channel.state = GETDATA;
-            channel.nrow = channel.nbyte = 0;
-            channel.nbits = channel.bits = 0;
-            channel.pr = 1.0;
+            ch->state = GETDATA;
+            ch->nrow = ch->nbyte = 0;
+            ch->nbits = ch->bits = 0;
+            ch->pr = 1.0;
 
             return;
         }
     case GETDATA:
         {
             if (V > 0.5) {
-                channel.bits |= 1 << channel.nbits;
-                channel.pr *= V;
+                ch->bits |= 1 << ch->nbits;
+                ch->pr *= V;
             } else {
-                channel.pr *= (1.0 - V);
+                ch->pr *= (1.0 - V);
             }
-            channel.nbits++;
-            if (channel.nbits < 8) {
+            ch->nbits++;
+            if (ch->nbits < 8) {
                 return;
             }
 
-            channel.blk->data[channel.nrow][channel.nbyte] = channel.bits;
-            channel.blk->pr[channel.nrow][channel.nbyte] = channel.pr;
+            ch->blk->data[ch->nrow][ch->nbyte] = ch->bits;
+            ch->blk->pr[ch->nrow][ch->nbyte] = ch->pr;
 
-            channel.nbits = channel.bits = 0;
-            channel.pr = 1.0;
-            channel.nrow++;
+            ch->nbits = ch->bits = 0;
+            ch->pr = 1.0;
+            ch->nrow++;
 
-            if (channel.nrow == channel.blk->nbrow ||
-                ((channel.nbyte >= channel.blk->nbbyte && channel.nbyte < 249)
-                 && channel.nrow == channel.blk->nbrow - 1)
+            if (ch->nrow == ch->blk->nbrow ||
+                ((ch->nbyte >= ch->blk->nbbyte && ch->nbyte < 249)
+                 && ch->nrow == ch->blk->nbrow - 1)
                 ) {
-                channel.nrow = 0;
-                channel.nbyte++;
+                ch->nrow = 0;
+                ch->nbyte++;
 
-                if (channel.blk->nbrow == 1 && channel.nbyte == channel.blk->nbbyte)
-                    channel.nbyte = 249;
+                if (ch->blk->nbrow == 1 && ch->nbyte == ch->blk->nbbyte)
+                    ch->nbyte = 249;
 
             }
 
-            if (channel.nbyte == 255 ||
-                (channel.nrow == channel.blk->nbrow - 1 &&
-                 (channel.blk->nbbyte < 30 && channel.nbyte == 251) ||
-                 (channel.blk->nbbyte < 68 && channel.nbyte == 253)
+            if (ch->nbyte == 255 ||
+                (ch->nrow == ch->blk->nbrow - 1 &&
+                 (ch->blk->nbbyte < 30 && ch->nbyte == 251) ||
+                 (ch->blk->nbbyte < 68 && ch->nbyte == 253)
                 )
                 ) {
-                decodeVdlm2();
 
-                channel.state = WSYNC;
+                decodeVdlm2(ch);
+
+                ch->state = WSYNC;
                 return;
             }
             return;
@@ -172,42 +173,42 @@ static inline void putbit(const float SV)
 
 }
 
-static inline void putgreycode(const float v)
+static inline void putgreycode(channel_t *ch,const float v)
 {
     int i = (int)roundf(128.0 * v / M_PI + 128.0);
-    putbit(Grey1[i]);
-    putbit(Grey2[i]);
-    putbit(Grey3[i]);
+    putbit(ch,Grey1[i]);
+    putbit(ch,Grey2[i]);
+    putbit(ch,Grey3[i]);
 }
 
-void demodD8psk(const float complex E)
+void demodD8psk(channel_t *ch,const float complex E)
 {
     int i, k;
     complex float S;
     float P;
     float d[4];
 
-    channel.Inbuff[ink] = E;
+    ch->Inbuff[ink] = E;
     ink = (ink + 1) % MFLTLEN;
 
-    channel.clk++;
-    if (channel.clk & 1)
+    ch->clk++;
+    if (ch->clk & 1)
         return;
 
     /* filter */
     S = 0;
     for (i = 0; i < MFLTLEN; i++) {
         k = (ink + i) % MFLTLEN;
-        S += channel.Inbuff[k] * mflt[channel.off][i];
+        S += ch->Inbuff[k] * mflt[ch->off][i];
     }
 
     /* phase */
     P = cargf(S);
 
-    channel.Phidx = (channel.Phidx + 1) % (NBPH * RTLDWN);
-    channel.Ph[channel.Phidx] = P;
+    ch->Phidx = (ch->Phidx + 1) % (NBPH * RTLDWN);
+    ch->Ph[ch->Phidx] = P;
 
-    if (channel.state == WSYNC) {
+    if (ch->state == WSYNC) {
 
         float fr, M;
         float Pr[NBPH], Pu, Pv;
@@ -215,13 +216,13 @@ void demodD8psk(const float complex E)
         float p, err;
 
         /* detect sync */
-        channel.off = 0;
+        ch->off = 0;
 
         Pu = 0;
-        M = Pv = Pr[0] = channel.Ph[(channel.Phidx + RTLDWN) % (NBPH * RTLDWN)] - SW[0];
+        M = Pv = Pr[0] = ch->Ph[(ch->Phidx + RTLDWN) % (NBPH * RTLDWN)] - SW[0];
         for (l = 1; l < NBPH; l++) {
             float Pc, Pd;
-            Pc = channel.Ph[(channel.Phidx + (l + 1) * RTLDWN) % (NBPH * RTLDWN)] - SW[l];
+            Pc = ch->Ph[(ch->Phidx + (l + 1) * RTLDWN) % (NBPH * RTLDWN)] - SW[l];
             /* unwarp */
             Pd = Pc - Pv;
             Pv = Pc;
@@ -247,44 +248,44 @@ void demodD8psk(const float complex E)
             err += e * e;
         }
 
-        //fprintf(stderr,"err %f %f\n",channel.perr,fr);
-        if (channel.perr < 4.0 && err > channel.perr) {
+        //fprintf(stderr,"err %f %f\n",ch->perr,fr);
+        if (ch->perr < 4.0 && err > ch->perr) {
             float of;
             double du;
-            clock_gettime(CLOCK_REALTIME, &(channel.blk->ts));
-            channel.state = GETHEAD;
-            channel.nbits = 0;
-            channel.scrambler = 0x4D4B;
+            clock_gettime(CLOCK_REALTIME, &(ch->blk->ts));
+            ch->state = GETHEAD;
+            ch->nbits = 0;
+            ch->scrambler = 0x4D4B;
             viterbi_init();
-            channel.df = channel.pfr;
-            of = (channel.p2err - 4 * channel.perr + 3 * err) / (channel.p2err - 2 * channel.perr + err);
-            channel.clk = (int)roundf(of);
-            channel.off = (int)roundf((of - channel.clk) * 8) + 4;
-            //fprintf(stderr,"head %f %d %d %f %f\n",of,channel.clk, channel.off,err,channel.df);
-            channel.perr = channel.p2err = 500;
+            ch->df = ch->pfr;
+            of = (ch->p2err - 4 * ch->perr + 3 * err) / (ch->p2err - 2 * ch->perr + err);
+            ch->clk = (int)roundf(of);
+            ch->off = (int)roundf((of - ch->clk) * 8) + 4;
+            //fprintf(stderr,"head %f %d %d %f %f\n",of,ch->clk, ch->off,err,ch->df);
+            ch->perr = ch->p2err = 500;
         } else {
-            channel.p2err = channel.perr;
-            channel.perr = err;
-            channel.pfr = fr;
-            channel.P1 = P;
+            ch->p2err = ch->perr;
+            ch->perr = err;
+            ch->pfr = fr;
+            ch->P1 = P;
         }
     } else {
         int v;
 
-        if (channel.clk == 8) {
+        if (ch->clk == 8) {
             float D, err;
 
-            channel.clk = 0;
+            ch->clk = 0;
 
-            D = (P - channel.P1) - channel.df;
+            D = (P - ch->P1) - ch->df;
             if (D > M_PI)
                 D -= 2 * M_PI;
             if (D < -M_PI)
                 D += 2 * M_PI;
 
-            putgreycode(D);
+            putgreycode(ch,D);
 
-            channel.P1 = P;
+            ch->P1 = P;
         }
     }
 

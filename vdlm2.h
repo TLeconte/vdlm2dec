@@ -20,10 +20,13 @@
 #include <complex.h>
 #include <stdint.h>
 
+#define MAXNBCHANNELS 1
+#define INTRATE 25000
+
 #define RTLMULT 24
 #define RTLDWN 4
-#define INBUFSZ (RTLMULT*4096)
 #define RTLINRATE (10500*RTLMULT*2*RTLDWN)
+#define RTLINBUFSZ (RTLMULT*4096)
 
 #define MFLTLEN 17
 
@@ -39,6 +42,9 @@ typedef struct mskblk_s {
 
 #define NBPH 17
 typedef struct {
+    int chn;
+    float Fr;
+    complex float *wf;
     complex float Inbuff[MFLTLEN];
     float Ph[NBPH * RTLDWN];
     int Phidx;
@@ -61,27 +67,30 @@ typedef struct {
 
 } channel_t;
 
-extern channel_t channel;
+#ifdef WITH_RTL
+extern int gain;
+extern int ppm;
+#endif
 
 extern int verbose;
 extern FILE *logfd;
 
 #ifdef WITH_RTL
-extern int initRtl(int dev_index, int gain, int freq);
-extern void resetRtl(void);
-extern void in_callback(unsigned char *rtlinbuff, unsigned int nread, void *ctx);
+extern int initRtl(char **argv,int optind);
+extern int runRtlSample(void);
 #endif
 
+extern void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx);
+
 extern int initFile(char *file);
-extern int runRtlSample(void);
 extern int runFileSample(void);
 
-extern int initD8psk(void);
-extern void demodD8psk(const float complex E);
+extern int initD8psk(channel_t *ch);
+extern void demodD8psk(channel_t *ch,const float complex E);
 
-extern int initVdlm2();
-extern void decodeVdlm2();
+extern int initVdlm2(channel_t *ch);
 extern void stopVdlm2(void);
+extern void decodeVdlm2(channel_t *ch);
 
 extern void init_crc_tab(void);
 extern unsigned short update_crc(const unsigned short crc, const unsigned char c);
