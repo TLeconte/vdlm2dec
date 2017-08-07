@@ -5,9 +5,13 @@ For now, it decodes only ACARS and some XID parameters
 
 ## Usage
 > vdlm2dec  [-v|V] [-l logfile]  [-g gain] [-r rtldevicenumber]  Frequency(Mhz)
- -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber 
- -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db).
+
+ -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber
+ 
+ -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db)
+ 
  -v :			verbose
+ 
  -l logfile :		output log (stderr by default)
 
 ## Examples
@@ -27,7 +31,7 @@ It depends on some external libraries :
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libusb
 
-##TODO
+## TODO
 
  * multifrequencies reception (like acarsdec)
  * improve demodulator CPU usage
