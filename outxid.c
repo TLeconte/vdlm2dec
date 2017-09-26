@@ -18,6 +18,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
@@ -100,11 +101,11 @@ void outprivategr(unsigned char *p, int len)
             }
         case 0x84:{
                 int alt;
-                float lat, lon;
-                lat = ((p[i + 2] << 4) | (p[i + 3] >> 4)) / 10.0;
-                lon = (int)((((unsigned int)(p[i + 3]) & 0xf) << 8) | (unsigned int)p[i + 4]) / 10.0;
+                short lat, lon;
+                lat = (((uint32_t)(p[i + 2]) << 8) | (p[i + 3]&0xf0)) ;
+                lon = (((uint32_t)(p[i + 3]&0xf) << 12) | (uint32_t)(p[i + 4])<<4) ;
                 alt = p[i + 5] * 1000;
-                fprintf(logfd, "Aircraft Location  %04.1f %05.1f alt:%d\n", lat, lon, alt);
+                fprintf(logfd, "Aircraft Position   %4.1f %5.1f alt:%d\n" ,(float)lat/160.0, (float)lon/160.0, alt);
                 break;
             }
         default:
