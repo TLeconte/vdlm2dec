@@ -35,7 +35,6 @@ int initD8psk(channel_t *ch)
     ch->df = 0;
     ch->perr = 100;
     ch->P1 = 0;
-    ch->off = 0;
 
     return 0;
 }
@@ -181,6 +180,19 @@ static inline void putgreycode(channel_t *ch,const float v)
     putbit(ch,Grey3[i]);
 }
 
+static inline float filteredphase(channel_t *ch)
+{
+    int i,k;
+    complex float S = 0;
+
+    for (i = 0; i*4+ch->clk < 4*MFLTLEN; i++) {
+        k = (ink + i) % MFLTLEN;
+        S += ch->Inbuff[k] * mflt[i*4+ch->clk];
+    }
+    /* phase */
+    return cargf(S);
+}
+
 void demodD8psk(channel_t *ch,const float complex E)
 {
     int i, k;
@@ -191,22 +203,8 @@ void demodD8psk(channel_t *ch,const float complex E)
     ch->Inbuff[ink] = E;
     ink = (ink + 1) % MFLTLEN;
 
-    ch->clk++;
-    if (ch->clk & 1)
-        return;
+    ch->clk+=4;
 
-    /* filter */
-    S = 0;
-    for (i = 0; i < MFLTLEN; i++) {
-        k = (ink + i) % MFLTLEN;
-        S += ch->Inbuff[k] * mflt[ch->off][i];
-    }
-
-    /* phase */
-    P = cargf(S);
-
-    ch->Phidx = (ch->Phidx + 1) % (NBPH * RTLDWN);
-    ch->Ph[ch->Phidx] = P;
 
     if (ch->state == WSYNC) {
 
@@ -215,8 +213,15 @@ void demodD8psk(channel_t *ch,const float complex E)
         int l;
         float p, err;
 
+	if(ch->clk<8) return;
+	ch->clk-=8;
+
+	P=filteredphase(ch);
+
+        ch->Phidx = (ch->Phidx + 1) % (NBPH * RTLDWN);
+        ch->Ph[ch->Phidx] = P;
+
         /* detect sync */
-        ch->off = 0;
 
         Pu = 0;
         M = Pv = Pr[0] = ch->Ph[(ch->Phidx + RTLDWN) % (NBPH * RTLDWN)] - SW[0];
@@ -258,24 +263,25 @@ void demodD8psk(channel_t *ch,const float complex E)
             ch->scrambler = 0x4D4B;
             viterbi_init();
             ch->df = ch->pfr;
-            of = (ch->p2err - 4 * ch->perr + 3 * err) / (ch->p2err - 2 * ch->perr + err);
+            of = 4*(ch->p2err - 4 * ch->perr + 3 * err) / (ch->p2err - 2 * ch->perr + err);
             ch->clk = (int)roundf(of);
-            ch->off = (int)roundf((of - ch->clk) * 8) + 4;
-            //fprintf(stderr,"head %f %d %d %f %f\n",of,ch->clk, ch->off,err,ch->df);
+    	    ch->P1 = filteredphase(ch);
+
+            //fprintf(stderr,"head %f %d %f %f\n",of,ch->clk, err,ch->df);
             ch->perr = ch->p2err = 500;
         } else {
             ch->p2err = ch->perr;
             ch->perr = err;
             ch->pfr = fr;
-            ch->P1 = P;
         }
     } else {
         int v;
+        float D, err;
 
-        if (ch->clk == 8) {
-            float D, err;
+        if (ch->clk <32) return;
+          ch->clk -=32; 
 
-            ch->clk = 0;
+	    P=filteredphase(ch);
 
             D = (P - ch->P1) - ch->df;
             if (D > M_PI)
@@ -286,7 +292,6 @@ void demodD8psk(channel_t *ch,const float complex E)
             putgreycode(ch,D);
 
             ch->P1 = P;
-        }
     }
 
     //SndWrite(d);

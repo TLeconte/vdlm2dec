@@ -50,7 +50,7 @@ typedef struct {
     int Phidx;
     float df, lv;
     unsigned int nlv;
-    int clk, off;
+    int clk;
     float p2err, perr;
     float pfr;
     float P1;
