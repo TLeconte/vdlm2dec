@@ -80,12 +80,8 @@ int initFile(char *file)
         return 1;
     }
 
-    ch->wf = malloc(RTLMULT * sizeof(float complex));
-
-    AMFreq = (10500*2*RTLDWN) / (float)(RTLINRATE) * 2.0 * M_PI;
-    for (ind = 0; ind < RTLMULT; ind++) {
-           ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT/127.5;
-    }
+    ch->Fosc = (10500*2*RTLDWN) / (float)(RTLINRATE) * 2.0 * M_PI;
+    ch->Posc=0;
 
     return 0;
 }

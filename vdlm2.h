@@ -20,12 +20,12 @@
 #include <complex.h>
 #include <stdint.h>
 
-#define MAXNBCHANNELS 1
-#define INTRATE 25000
+#define MAXNBCHANNELS 8
 
 #define RTLMULT 24
 #define RTLDWN 4
-#define RTLINRATE (10500*RTLMULT*2*RTLDWN)
+#define INTRATE  10500*2*RTLDWN
+#define RTLINRATE (RTLMULT*INTRATE)
 #define RTLINBUFSZ (RTLMULT*4096)
 
 #define MFLTLEN 17
@@ -34,7 +34,7 @@ typedef struct mskblk_s {
     struct mskblk_s *prev;
     int chn;
     struct timespec ts;
-    float df, lvl;
+    float ppm;
     int nbrow, nbbyte, nblst;
     unsigned char data[65][255];
     float pr[65][255];
@@ -44,7 +44,7 @@ typedef struct mskblk_s {
 typedef struct {
     int chn;
     float Fr;
-    complex float *wf;
+    float Posc,Fosc;
     complex float Inbuff[MFLTLEN];
     float Ph[NBPH * RTLDWN];
     int Phidx;

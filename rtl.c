@@ -211,9 +211,7 @@ int initRtl(char **argv, int optind)
 
 	nbch = 0;
 	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
-		Fd[nbch] =
-		    ((int)(1000000 * atof(argF) + INTRATE / 2) / INTRATE) *
-		    INTRATE;
+		Fd[nbch] = (int)(1000000 * atof(argF));
 		optind++;
 		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
 			fprintf(stderr, "WARNING: Invalid frequency %d\n",
@@ -224,7 +222,7 @@ int initRtl(char **argv, int optind)
 		channel[nbch].Fr = (float)Fd[nbch];
 		nbch++;
 	};
-	if (nbch >= MAXNBCHANNELS)
+	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, using only the first %d\n",
 			MAXNBCHANNELS);
@@ -234,22 +232,15 @@ int initRtl(char **argv, int optind)
 		return 1;
 	}
 
-//	Fc = chooseFc(Fd, nbch);
-//	if (Fc == 0)
-//		return 1;
-	Fc=channel[0].Fr-10500*2*RTLDWN;
+	Fc = chooseFc(Fd, nbch);
+	if (Fc == 0)
+		return 1;
 
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
-		int ind;
-		float AMFreq;
 
-		ch->wf = malloc(RTLMULT * sizeof(float complex));
-
-		AMFreq = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
-		for (ind = 0; ind < RTLMULT; ind++) {
-			ch->wf[ind]=cexpf(AMFreq*ind*-I)/RTLMULT/127.5;
-		}
+		ch->Fosc = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
+		ch->Posc = 0;
 	}
 
 	if (verbose)
@@ -290,9 +281,8 @@ void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	for (n = 0; n < nbch; n++) {
 		channel_t *ch = &(channel[n]);
 		int i,m;
-		float complex D,*wf;
+		float complex D;
 
-		wf = ch->wf;
 		m=0;
 		for (i = 0; i < RTLINBUFSZ;) {
 			int ind;
@@ -304,9 +294,13 @@ void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 				r = (float)rtlinbuff[i] - (float)127.5; i++;
 				g = (float)rtlinbuff[i] - (float)127.5; i++;
-
 				v=r+g*I;
-				D+=v*wf[ind];
+
+				D+=v*cexpf(-ch->Posc*I);
+
+				ch->Posc+=ch->Fosc;
+				if(ch->Posc>M_PI) ch->Posc-=2*M_PI;
+				if(ch->Posc<-M_PI) ch->Posc+=2*M_PI;
 			}
 			demodD8psk(ch,D);
 		}

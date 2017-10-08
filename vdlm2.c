@@ -157,18 +157,18 @@ static void *blk_thread(void *arg)
         }
 
         if (verbose > 1)
-            fprintf(logfd, "#%01d received len:%d\n", blk->chn,k);
+            fprintf(logfd, "#%01d ppm: %2.0f received len:%d\n", blk->chn+1,blk->ppm,k);
 
         if (fec < 0) {
             if (verbose > 1)
-                fprintf(logfd, "#%01d error fec\n",blk->chn);
+                fprintf(logfd, "error fec\n");
             free(blk);
             continue;
         }
 
         if (k < 13) {
             if (verbose > 1)
-                fprintf(logfd, "#%01d error too short\n",blk->chn);
+                fprintf(logfd, "error too short\n");
             continue;
         }
 
@@ -193,8 +193,8 @@ static void *blk_thread(void *arg)
                 (reversebits(hdata[5] >> 2, 6) << 21) | (reversebits(hdata[6] >> 1, 7) << 14) |
                 (reversebits(hdata[7] >> 1, 7) << 7) | (reversebits(hdata[8] >> 1, 7));
 
-            fprintf(logfd, "#%01d %s from %s %06x to %06x\n", blk->chn,rep ? "response" : "command",
-                    (hdata[1] & 2) ? "ground" : "airborne", fraddr & 0xffffff, toaddr & 0xffffff);
+            fprintf(logfd, "%s from %s %06x to %06x\n", rep ? "response" : "command",
+                    	(hdata[1] & 2) ? "ground" : "airborne", fraddr & 0xffffff, toaddr & 0xffffff);
 
             fprintf(logfd, "Link Control : ");
             if (hdata[9] & 1) {

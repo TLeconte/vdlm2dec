@@ -263,6 +263,7 @@ void demodD8psk(channel_t *ch,const float complex E)
             ch->scrambler = 0x4D4B;
             viterbi_init();
             ch->df = ch->pfr;
+	    ch->blk->ppm=10500*ch->df/(2*M_PI*ch->Fr)*1e6;
             of = 4*(ch->p2err - 4 * ch->perr + 3 * err) / (ch->p2err - 2 * ch->perr + err);
             ch->clk = (int)roundf(of);
     	    ch->P1 = filteredphase(ch);
