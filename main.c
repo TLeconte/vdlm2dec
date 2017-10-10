@@ -53,8 +53,10 @@ static void usage(void)
 #ifdef WITH_RTL
     fprintf(stderr, " -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber \n");
     fprintf(stderr, " -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
+    fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
     fprintf(stderr, " -v :\t\t\tverbose\n");
+    fprintf(stderr, " -q :\t\t\tquiet\n");
     fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
     exit(1);
 }
@@ -112,10 +114,13 @@ int main(int argc, char **argv)
     nbch=0;
     logfd = stderr;
 
-    while ((c = getopt(argc, argv, "vVt:rp:g:l:")) != EOF) {
+    while ((c = getopt(argc, argv, "vqt:rp:g:l:")) != EOF) {
         switch (c) {
         case 'v':
             verbose = 2;
+            break;
+        case 'q':
+            verbose = 0;
             break;
         case 't':
             res = initFile(optarg);
