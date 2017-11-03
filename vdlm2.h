@@ -28,7 +28,7 @@
 #define RTLINRATE (RTLMULT*INTRATE)
 #define RTLINBUFSZ (RTLMULT*4096)
 
-#define MFLTLEN 17
+#define MFLTLEN 16
 
 typedef struct mskblk_s {
     struct mskblk_s *prev;
@@ -42,12 +42,13 @@ typedef struct mskblk_s {
 
 #define NBPH 17
 typedef struct {
+    complex float Inbuff[MFLTLEN];
+    float Ph[NBPH * RTLDWN];
+
     int chn;
     float Fr;
     float Posc,Fosc;
-    complex float Inbuff[MFLTLEN];
-    float Ph[NBPH * RTLDWN];
-    int Phidx;
+    int ink,Phidx;
     float df, lv;
     unsigned int nlv;
     int clk;
@@ -86,7 +87,6 @@ extern int initFile(char *file);
 extern int runFileSample(void);
 
 extern int initD8psk(channel_t *ch);
-extern void demodD8psk(channel_t *ch,const float complex E);
 
 extern int initVdlm2(channel_t *ch);
 extern void stopVdlm2(void);

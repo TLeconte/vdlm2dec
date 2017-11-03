@@ -28,13 +28,19 @@
 static struct timespec ftime;
 static unsigned int ink;
 
+
+void *rcv_thread(void *arg);
 int initD8psk(channel_t *ch)
 {
-    ink = 0;
+    pthread_t th;
+
+    ch->ink = 0;
     ch->Phidx = 0;
     ch->df = 0;
     ch->perr = 100;
     ch->P1 = 0;
+
+    pthread_create(&th, NULL, rcv_thread, ch);
 
     return 0;
 }
@@ -186,22 +192,23 @@ static inline float filteredphase(channel_t *ch)
     complex float S = 0;
 
     for (i = 0; i*4+ch->clk < 4*MFLTLEN; i++) {
-        k = (ink + i) % MFLTLEN;
+        k = (ch->ink + i) % MFLTLEN;
         S += ch->Inbuff[k] * mflt[i*4+ch->clk];
     }
     /* phase */
     return cargf(S);
 }
 
-void demodD8psk(channel_t *ch,const float complex E)
+
+static void demodD8psk(channel_t *ch,const complex float E)
 {
     int i, k;
     complex float S;
     float P;
     float d[4];
 
-    ch->Inbuff[ink] = E;
-    ink = (ink + 1) % MFLTLEN;
+    ch->Inbuff[ch->ink] = E;
+    ch->ink = (ch->ink + 1) % MFLTLEN;
 
     ch->clk+=4;
 
@@ -297,4 +304,34 @@ void demodD8psk(channel_t *ch,const float complex E)
 
     //SndWrite(d);
 
+}
+
+extern pthread_barrier_t Bar1,Bar2;
+extern complex float Cbuff[RTLINBUFSZ/2];
+void *rcv_thread(void *arg)
+{
+   channel_t *ch=(channel_t *)arg;
+
+   pthread_barrier_wait(&Bar1);
+   do {
+     int i;
+     complex float D;
+
+     pthread_barrier_wait(&Bar2);
+     for (i = 0; i < RTLINBUFSZ/2;) {
+           int ind;
+
+           D = 0;
+           for (ind = 0; ind < RTLMULT; ind++) {
+
+               D+=Cbuff[i++]*cexpf(-ch->Posc*I);
+
+               ch->Posc+=ch->Fosc;
+               if(ch->Posc>M_PI) ch->Posc-=2*M_PI;
+               if(ch->Posc<-M_PI) ch->Posc+=2*M_PI;
+            }
+            demodD8psk(ch,D);
+     }
+     pthread_barrier_wait(&Bar1);
+   } while(1);
 }

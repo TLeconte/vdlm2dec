@@ -29,10 +29,10 @@
 
 extern channel_t channel[MAXNBCHANNELS];
 extern int nbch;
+extern pthread_barrier_t Bar1,Bar2;
 
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
-
 
 /* function verbose_device_search by Kyle Keen
  * from http://cgit.osmocom.org/rtl-sdr/tree/src/convenience/convenience.c
@@ -267,44 +267,26 @@ int initRtl(char **argv, int optind)
 	return 0;
 }
 
+complex float Cbuff[RTLINBUFSZ/2];
 void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
-	int r, n;
+	int i;
 
 	if (nread != RTLINBUFSZ) {
 		fprintf(stderr, "warning: partial read\n");
 		return;
-
 	}
-	status=0;
 
-	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
-		int i,m;
-		float complex D;
-
-		m=0;
-		for (i = 0; i < RTLINBUFSZ;) {
-			int ind;
-
-			D = 0;
-			for (ind = 0; ind < RTLMULT; ind++) {
-				float r, g;
-				float complex v;
-
-				r = (float)rtlinbuff[i] - (float)127.5; i++;
-				g = (float)rtlinbuff[i] - (float)127.5; i++;
-				v=r+g*I;
-
-				D+=v*cexpf(-ch->Posc*I);
-
-				ch->Posc+=ch->Fosc;
-				if(ch->Posc>M_PI) ch->Posc-=2*M_PI;
-				if(ch->Posc<-M_PI) ch->Posc+=2*M_PI;
-			}
-			demodD8psk(ch,D);
-		}
+	pthread_barrier_wait(&Bar1);
+	
+	for (i = 0; i < RTLINBUFSZ;) {
+		float r, g;
+		r = (float)rtlinbuff[i] - (float)127.5; i++;
+		g = (float)rtlinbuff[i] - (float)127.5; i++;
+		Cbuff[i/2]=r+g*I;
 	}
+
+	pthread_barrier_wait(&Bar2);
 }
 
 int runRtlSample(void)

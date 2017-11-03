@@ -40,6 +40,8 @@ int ppm = 0;
 channel_t channel[MAXNBCHANNELS];
 int nbch;
 
+pthread_barrier_t Bar1,Bar2;
+
 FILE *logfd;
 
 static void usage(void)
@@ -162,6 +164,9 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &sigact, NULL);
     sigaction(SIGTERM, &sigact, NULL);
     sigaction(SIGQUIT, &sigact, NULL);
+
+    pthread_barrier_init(&Bar1,NULL,nbch+1);
+    pthread_barrier_init(&Bar2,NULL,nbch+1);
 
     for (n = 0; n < nbch; n++) {
          channel[n].chn = n;
