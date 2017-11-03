@@ -1,4 +1,4 @@
-CFLAGS= -Ofast -march=native -pthread -D WITH_RTL  -I /usr/local/include/librtlsdr
+CFLAGS= -Ofast -pthread -D WITH_RTL  -I /usr/local/include/librtlsdr
 LDLIBS= -lm -pthread  -lusb-1.0  -L/usr/local/lib -lrtlsdr -lrt
 
 CC=gcc
