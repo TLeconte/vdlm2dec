@@ -31,14 +31,13 @@
 #include "vdlm2.h"
 
 int verbose = 1;
-int itype = -1;
 #ifdef WITH_RTL
 int gain = 1000;
 int ppm = 0;
 #endif
 
-channel_t channel[MAXNBCHANNELS];
 int nbch;
+thread_param_t tparam[MAXNBCHANNELS];
 
 pthread_barrier_t Bar1,Bar2;
 
@@ -69,41 +68,6 @@ static void sighandler(int signum)
     exit(1);
 }
 
-static int infd;
-int initFile(char *file)
-{
-    channel_t *ch = &(channel[0]);
-    int ind;
-    float AMFreq;
-
-    nbch=1;
-
-    infd = open(file, O_RDONLY);
-    if (infd < 0) {
-        fprintf(stderr, "could not open data\n ");
-        return 1;
-    }
-
-    ch->Fosc = (10500*2*RTLDWN) / (float)(RTLINRATE) * 2.0 * M_PI;
-    ch->Posc=0;
-
-    return 0;
-}
-
-int runFileSample(void)
-{
-    unsigned char buffer[RTLINBUFSZ];
-
-    size_t rd;
-
-    do {
-        rd = read(infd, buffer, RTLINBUFSZ);
-        if (rd)
-            in_callback(buffer, rd, NULL);
-    } while (rd);
-
-}
-
 int main(int argc, char **argv)
 {
     int c;
@@ -116,17 +80,13 @@ int main(int argc, char **argv)
     nbch=0;
     logfd = stderr;
 
-    while ((c = getopt(argc, argv, "vqt:rp:g:l:")) != EOF) {
+    while ((c = getopt(argc, argv, "vqrp:g:l:")) != EOF) {
         switch (c) {
         case 'v':
             verbose = 2;
             break;
         case 'q':
             verbose = 0;
-            break;
-        case 't':
-            res = initFile(optarg);
-            itype = 1;
             break;
         case 'l':
             logfd = fopen(optarg, "w+");
@@ -137,8 +97,7 @@ int main(int argc, char **argv)
             break;
 #ifdef WITH_RTL
         case 'r':
-            res = initRtl(argv, optind);
-            itype = 0;
+            res = initRtl(argv, optind,tparam);
             break;
         case 'g':
             gain = atoi(optarg);
@@ -169,30 +128,15 @@ int main(int argc, char **argv)
     pthread_barrier_init(&Bar2,NULL,nbch+1);
 
     for (n = 0; n < nbch; n++) {
-         channel[n].chn = n;
-
-         res = initD8psk(&(channel[n]));
-         if (res)
-                   break;
-         res = initVdlm2(&(channel[n]));
-         if (res)
-                  break;
+         pthread_t th;
+         pthread_create(&th, NULL, rcv_thread, &(tparam[n]));
     }
 
 #if DEBUG
     initSndWrite();
 #endif
 
-    switch (itype) {
-#ifdef WITH_RTL
-    case 0:
-        res = runRtlSample();
-        break;
-#endif
-    case 1:
-        res = runFileSample();
-        break;
-    }
+    runRtlSample();
 
     stopVdlm2();
 

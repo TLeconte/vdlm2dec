@@ -40,6 +40,12 @@ typedef struct mskblk_s {
     float pr[65][255];
 } msgblk_t;
 
+typedef struct {
+    int chn;
+    float Fr;
+    float Fosc;
+} thread_param_t;
+
 #define NBPH 17
 typedef struct {
     complex float Inbuff[MFLTLEN];
@@ -77,7 +83,7 @@ extern int verbose;
 extern FILE *logfd;
 
 #ifdef WITH_RTL
-extern int initRtl(char **argv,int optind);
+extern int initRtl(char **argv,int optind,thread_param_t* param);
 extern int runRtlSample(void);
 #endif
 
@@ -87,6 +93,7 @@ extern int initFile(char *file);
 extern int runFileSample(void);
 
 extern int initD8psk(channel_t *ch);
+extern void *rcv_thread(void *arg);
 
 extern int initVdlm2(channel_t *ch);
 extern void stopVdlm2(void);
@@ -104,5 +111,7 @@ extern unsigned int reversebits(const unsigned int bits, const int n);
 extern unsigned short pppfcs16(unsigned char *cp, int len);
 extern int rs(unsigned char *data, int *eras_pos, int no_eras);
 
-extern void dumpdata(unsigned char *p, int len);
-extern void outxid(unsigned char *p, int len);
+extern int netconnect(char *inaddr);
+extern int transmit(unsigned int addr,char *st,int len,uint64_t tm);
+
+

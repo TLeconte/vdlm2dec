@@ -27,7 +27,6 @@
 #include <rtl-sdr.h>
 #include "vdlm2.h"
 
-extern channel_t channel[MAXNBCHANNELS];
 extern int nbch;
 extern pthread_barrier_t Bar1,Bar2;
 
@@ -176,7 +175,7 @@ int nearest_gain(int target_gain)
 	return close_gain;
 }
 
-int initRtl(char **argv, int optind)
+int initRtl(char **argv, int optind, thread_param_t *param)
 {
 	int r, n;
 	int dev_index;
@@ -218,8 +217,8 @@ int initRtl(char **argv, int optind)
 				Fd[nbch]);
 			continue;
 		}
-		channel[nbch].chn = nbch;
-		channel[nbch].Fr = (float)Fd[nbch];
+		param[nbch].chn = nbch;
+		param[nbch].Fr = (float)Fd[nbch];
 		nbch++;
 	};
 	if (nbch > MAXNBCHANNELS)
@@ -237,10 +236,7 @@ int initRtl(char **argv, int optind)
 		return 1;
 
 	for (n = 0; n < nbch; n++) {
-		channel_t *ch = &(channel[n]);
-
-		ch->Fosc = (ch->Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
-		ch->Posc = 0;
+		param[n].Fosc = (param[n].Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
 	}
 
 	if (verbose)

@@ -29,18 +29,14 @@ static struct timespec ftime;
 static unsigned int ink;
 
 
-void *rcv_thread(void *arg);
 int initD8psk(channel_t *ch)
 {
-    pthread_t th;
-
     ch->ink = 0;
     ch->Phidx = 0;
     ch->df = 0;
     ch->perr = 100;
     ch->P1 = 0;
-
-    pthread_create(&th, NULL, rcv_thread, ch);
+    ch->Posc = 0;
 
     return 0;
 }
@@ -95,18 +91,12 @@ static inline void putbit(channel_t *ch,const float SV)
 
             vp = viterbi_end(&bits);
 
-            if (vp < 0.04) {
-                //fprintf(stderr,"error viterbi\n");
-                ch->state = WSYNC;
-                return;
-            }
-
             bits >>= 5;         /* remove FEC */
 
             len = reversebits(bits, 17);
 
             if (len < 13 * 8) {
-                //fprintf(stderr,"error too short\n");
+                if(verbose) fprintf(stderr,"error too short %d #%d\n",len,ch->chn);
                 ch->state = WSYNC;
                 return;
             }
@@ -114,12 +104,12 @@ static inline void putbit(channel_t *ch,const float SV)
             ch->blk->nbrow = len / 1992 + 1;
             ch->blk->nbbyte = (len % 1992 + 7) / 8;
 
-            if (ch->blk->nbrow > 65) {
-                //fprintf(stderr,"error too long\n");
+            if (ch->blk->nbrow > 1) {
+                if(verbose)fprintf(stderr,"error too long %d #%d\n",ch->blk->nbrow,ch->chn);
                 ch->state = WSYNC;
                 return;
             }
-            //fprintf(stderr,"row %d byte %d v: %f\n",ch->blk->nbrow,ch->blk->nbbyte,vp);
+            //fprintf(stderr,"#%d len %d row %d byte %d v: %f\n",ch->chn,len,ch->blk->nbrow,ch->blk->nbbyte,vp);
 
             ch->state = GETDATA;
             ch->nrow = ch->nbyte = 0;
@@ -200,7 +190,7 @@ static inline float filteredphase(channel_t *ch)
 }
 
 
-static void demodD8psk(channel_t *ch,const complex float E)
+static inline void demodD8psk(channel_t *ch,const complex float E)
 {
     int i, k;
     complex float S;
@@ -310,27 +300,36 @@ extern pthread_barrier_t Bar1,Bar2;
 extern complex float Cbuff[RTLINBUFSZ/2];
 void *rcv_thread(void *arg)
 {
-   channel_t *ch=(channel_t *)arg;
+   thread_param_t *param=(thread_param_t*)arg;
+   channel_t ch;
+
+   ch.chn=param->chn;
+   ch.Fr=param->Fr;
+   ch.Fosc=param->Fosc;
+
+   initD8psk(&ch);
+   initVdlm2(&ch);
 
    pthread_barrier_wait(&Bar1);
    do {
      int i;
-     complex float D;
 
      pthread_barrier_wait(&Bar2);
+
      for (i = 0; i < RTLINBUFSZ/2;) {
            int ind;
+     	   complex float D;
 
            D = 0;
-           for (ind = 0; ind < RTLMULT; ind++) {
+     	   for (ind = 0; ind < RTLMULT; ind++) {
 
-               D+=Cbuff[i++]*cexpf(-ch->Posc*I);
+               D+=Cbuff[i++]*cexpf(-ch.Posc*I);
 
-               ch->Posc+=ch->Fosc;
-               if(ch->Posc>M_PI) ch->Posc-=2*M_PI;
-               if(ch->Posc<-M_PI) ch->Posc+=2*M_PI;
-            }
-            demodD8psk(ch,D);
+               ch.Posc+=ch.Fosc;
+               if(ch.Posc>M_PI) ch.Posc-=2*M_PI;
+               if(ch.Posc<-M_PI) ch.Posc+=2*M_PI;
+           }
+           demodD8psk(&ch,D);
      }
      pthread_barrier_wait(&Bar1);
    } while(1);
