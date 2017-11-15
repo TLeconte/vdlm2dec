@@ -35,9 +35,8 @@ typedef struct mskblk_s {
     int chn;
     struct timespec ts;
     float ppm;
-    int nbrow, nbbyte, nblst;
+    int nbrow, nlbyte;
     unsigned char data[65][255];
-    float pr[65][255];
 } msgblk_t;
 
 typedef struct {
@@ -64,12 +63,12 @@ typedef struct {
 
     unsigned int scrambler;
     unsigned int nbits;
-    unsigned int nrow;
     unsigned int nbyte;
+    unsigned int nrow,nbrow;
+    unsigned int nlbyte;
     unsigned char bits;
-    float pr;
 
-    enum { WSYNC, GETHEAD, GETDATA } state;
+    enum { WSYNC, GETHEAD, GETDATA, GETFEC } state;
     msgblk_t *blk;
 
 } channel_t;

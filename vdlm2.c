@@ -44,16 +44,14 @@ void dumpdata(unsigned char *p, int len)
     fprintf(logfd, "]\n");
 }
 
-static int set_eras(float *pr, int *eras_pos, int nb)
+static int set_eras(int *eras_pos, int nb)
 {
     int i, nbera = 0;
-    float eras_pr[6];
 
     if (nb <= 67) {
         nbera = 2;
         eras_pos[0] = 253;
         eras_pos[1] = 254;
-        eras_pr[0] = eras_pr[1] = 0;
     }
     if (nb <= 30) {
         nbera = 4;
@@ -61,28 +59,6 @@ static int set_eras(float *pr, int *eras_pos, int nb)
         eras_pos[1] = 252;
         eras_pos[2] = 253;
         eras_pos[3] = 254;
-        eras_pr[0] = eras_pr[1] = eras_pr[2] = eras_pr[3] = 0;
-    }
-
-    for (i = 0; i < nb; i++) {
-        int k, l;
-
-        if (pr[i] > 0.3)
-            continue;
-
-        k = 0;
-        while (pr[i] > eras_pr[k] && k < nbera)
-            k++;
-        if (k == 6)
-            continue;
-        for (l = 5; l > k; l--) {
-            eras_pr[l] = eras_pr[l - 1];
-            eras_pos[l] = eras_pos[l - 1];
-        }
-        eras_pos[k] = i;
-        eras_pr[k] = pr[i];
-        if (k >= nbera)
-            nbera = k + 1;
     }
 
     return nbera;
@@ -114,11 +90,11 @@ static void *blk_thread(void *arg)
             int by;
 
             if (r == blk->nbrow - 1) {
-                by = blk->nbbyte;
+                by = blk->nlbyte;
+            	nbera = set_eras(eras_pos, by);
             } else {
-                by = 249;
+                by = 249;nbera=0;
             }
-            nbera = set_eras(blk->pr[r], eras_pos, by);
 
             /* reed solomon FEC */
             fec = rs(blk->data[r], eras_pos, nbera);
@@ -127,14 +103,8 @@ static void *blk_thread(void *arg)
 
             /* HDLC bit un stuffing */
             for (i = 0; i < by; i++) {
-                int l;
 
-                if (blk->nblst != 0 && r == blk->nbrow - 1 && i == blk->nbbyte - 1)
-                    l = blk->nblst;
-                else
-                    l = 8;
-
-                for (n = 0; n < l; n++) {
+                for (n = 0; n < 8; n++) {
                     if (blk->data[r][i] & (1 << n)) {
                         hdata[k] |= 1 << s;
                         t++;
@@ -156,19 +126,16 @@ static void *blk_thread(void *arg)
 
         }
 
-        if (verbose > 1)
-            fprintf(logfd, "#%01d ppm: %2.0f received len:%d\n", blk->chn+1,blk->ppm,k);
-
         if (fec < 0) {
             if (verbose > 1)
-                fprintf(logfd, "error fec\n");
+                fprintf(logfd, "#%d error fec\n",blk->chn+1);
             free(blk);
             continue;
         }
 
         if (k < 13) {
             if (verbose > 1)
-                fprintf(logfd, "error too short\n");
+                fprintf(logfd, "#%d error too short\n",blk->chn+1);
             continue;
         }
 
@@ -179,10 +146,14 @@ static void *blk_thread(void *arg)
         }
         if (crc != PPPGOODFCS16) {
             if (verbose > 1)
-                fprintf(logfd, "error crc\n");
+                fprintf(logfd, "#%derror crc\n",blk->chn+1);
             free(blk);
             continue;
         }
+
+        if (verbose > 1)
+            fprintf(logfd, "#%01d ppm: %2.0f received len:%d\n", blk->chn+1,blk->ppm,k);
+
 
         if (verbose) {
             int rep = hdata[5] & 2;

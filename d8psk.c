@@ -69,7 +69,7 @@ static inline float descrambler(channel_t *ch,const float V)
 
 }
 
-static inline void putbit(channel_t *ch,const float SV)
+static void putbit(channel_t *ch,const float SV)
 {
     float V;
 
@@ -82,88 +82,127 @@ static inline void putbit(channel_t *ch,const float SV)
     case GETHEAD:
         {
             unsigned int bits, len;
-            float vp;
 
             viterbi_add(V, ch->nbits);
             ch->nbits++;
             if (ch->nbits < 25)
                 return;
 
-            vp = viterbi_end(&bits);
+            viterbi_end(&bits);
 
             bits >>= 5;         /* remove FEC */
 
             len = reversebits(bits, 17);
 
-            if (len < 13 * 8) {
-                if(verbose) fprintf(stderr,"error too short %d #%d\n",len,ch->chn);
+   	    ch->nbrow=ch->blk->nbrow = len / 1992 + 1;
+            ch->nlbyte=ch->blk->nlbyte = (len % 1992 + 7) / 8;
+
+            if (len < 12*8) {
+                if(verbose>1)fprintf(stderr,"error too short %d #%d\n",len,ch->chn+1);
                 ch->state = WSYNC;
                 return;
             }
 
-            ch->blk->nbrow = len / 1992 + 1;
-            ch->blk->nbbyte = (len % 1992 + 7) / 8;
-
-            if (ch->blk->nbrow > 1) {
-                if(verbose)fprintf(stderr,"error too long %d #%d\n",ch->blk->nbrow,ch->chn);
+            if (ch->blk->nbrow > 8) {
+                if(verbose>1)fprintf(stderr,"error too long %d #%d\n",ch->blk->nbrow,ch->chn);
                 ch->state = WSYNC;
                 return;
             }
-            //fprintf(stderr,"#%d len %d row %d byte %d v: %f\n",ch->chn,len,ch->blk->nbrow,ch->blk->nbbyte,vp);
+
+            if(verbose>1)
+		fprintf(stderr,"#%d %d row %d %d\n",ch->chn+1,len,ch->nbrow,ch->nlbyte);
 
             ch->state = GETDATA;
             ch->nrow = ch->nbyte = 0;
             ch->nbits = ch->bits = 0;
-            ch->pr = 1.0;
 
             return;
         }
     case GETDATA:
         {
-            if (V > 0.5) {
+           if (V > 0.5) {
                 ch->bits |= 1 << ch->nbits;
-                ch->pr *= V;
-            } else {
-                ch->pr *= (1.0 - V);
             }
+
             ch->nbits++;
-            if (ch->nbits < 8) {
-                return;
-            }
+            if (ch->nbits < 8) return;
 
             ch->blk->data[ch->nrow][ch->nbyte] = ch->bits;
-            ch->blk->pr[ch->nrow][ch->nbyte] = ch->pr;
+            //fprintf(stderr,"data %d %d %x\n",ch->nrow,ch->nbyte,ch->bits);
 
-            ch->nbits = ch->bits = 0;
-            ch->pr = 1.0;
+            ch->nbits = 0;
+	    ch->bits = 0;
             ch->nrow++;
 
-            if (ch->nrow == ch->blk->nbrow ||
-                ((ch->nbyte >= ch->blk->nbbyte && ch->nbyte < 249)
-                 && ch->nrow == ch->blk->nbrow - 1)
-                ) {
+            if (ch->nrow == ch->nbrow ) {
                 ch->nrow = 0;
                 ch->nbyte++;
+	    }
 
-                if (ch->blk->nbrow == 1 && ch->nbyte == ch->blk->nbbyte)
-                    ch->nbyte = 249;
+	    if(ch->nlbyte)
+		while(ch->nrow == ch->nbrow-1 && ch->nbyte >= ch->nlbyte && ch->nbyte < 249) {
+            		ch->blk->data[ch->nrow][ch->nbyte]=0;
+            		//fprintf(stderr,"data0 %d %d\n",ch->nrow,ch->nbyte);
+                	ch->nrow = 0;
+                	ch->nbyte++;
+		}
+
+	    if(ch->nbyte == 249) {
+                	ch->state = GETFEC;
+            		ch->nrow=ch->nbyte = 0;
+
+			if(ch->nlbyte<=2) {
+				ch->nlbyte=0;
+				ch->nbrow--;
+			} else
+			  if(ch->nlbyte<=30) 
+				ch->nlbyte=2;
+			  else
+			   if(ch->nlbyte<=67) 
+				ch->nlbyte=4;
+			   else
+				ch->nlbyte=0;
 
             }
+	    return;
+        }
+    case GETFEC:
+        {
+           if (V > 0.5) {
+                ch->bits |= 1 << ch->nbits;
+            }
 
-            if (ch->nbyte == 255 ||
-                (ch->nrow == ch->blk->nbrow - 1 &&
-                 (ch->blk->nbbyte < 30 && ch->nbyte == 251) ||
-                 (ch->blk->nbbyte < 68 && ch->nbyte == 253)
-                )
-                ) {
+            ch->nbits++;
+            if (ch->nbits < 8) return;
+
+            ch->blk->data[ch->nrow][ch->nbyte+249] = ch->bits;
+            //fprintf(stderr,"data fec %d %d %x\n",ch->nrow,ch->nbyte+249,ch->bits);
+
+            ch->nbits = 0;
+	    ch->bits = 0;
+            ch->nrow++;
+
+            if (ch->nrow == ch->nbrow ) {
+                ch->nrow = 0;
+                ch->nbyte++;
+	    }
+
+	    if(ch->nlbyte)
+		while(ch->nrow == ch->nbrow-1 && ch->nbyte >= ch->nlbyte && ch->nbyte < 6) {
+            		ch->blk->data[ch->nrow][ch->nbyte+249]=0;
+            		//fprintf(stderr,"data fec0 %d %d\n",ch->nrow,ch->nbyte+249);
+                	ch->nrow = 0;
+                	ch->nbyte++;
+		}
+
+            if (ch->nbyte == 6 ) {
 
                 decodeVdlm2(ch);
 
                 ch->state = WSYNC;
-                return;
             }
             return;
-        }
+	}
     }
 
 }
