@@ -36,14 +36,23 @@ void outpublicgr(unsigned char *p, int len)
         short len = p[i + 1];
 
         switch (p[i]) {
+        case 0:
+            break;
         case 0x01:
+            fprintf(logfd, "Parameter set ID\n");
+            break;
+        case 0x02:
+            fprintf(logfd, "Procedure classes\n");
+            break;
+        case 0x03:
+            fprintf(logfd, "HDLC options\n");
             break;
         case 0x09:
             fprintf(logfd, "Timer T1 downlink\n");
             break;
         default:
+            fprintf(logfd, "unknown public id %02x\n", p[i]);
             if (verbose > 1) {
-                fprintf(logfd, "unknown public id %02x\n", p[i]);
                 dumpdata(&(p[i]), len + 2);
             }
             break;
@@ -64,7 +73,22 @@ void outprivategr(unsigned char *p, int len)
         case 0:
             break;
         case 0x01:
-            fprintf(logfd, "Connection management %02x\n", p[i + 2]);
+            fprintf(logfd, "Connection management: ");
+	    if(p[i + 2]&1)
+            	fprintf(logfd, "HO  ");
+	    else
+	      if(p[i + 2]&2)
+            	fprintf(logfd, "LCR ");
+	      else
+            	fprintf(logfd, "LE  ");
+	    if(p[i + 2]&4)
+            	fprintf(logfd, "GDA:");
+	    else
+            	fprintf(logfd, "VDA:");
+	    if(p[i + 2]&8)
+            	fprintf(logfd, "ESS\n");
+	    else
+            	fprintf(logfd, "ESN\n");
             break;
         case 0x02:
             fprintf(logfd, "Signal quality %01d\n", p[i + 2]);
@@ -73,7 +97,27 @@ void outprivategr(unsigned char *p, int len)
             fprintf(logfd, "XID sequencing %1d:%1d\n", p[i + 2] >> 4, p[i + 2] & 0x7);
             break;
         case 0x04:
-            fprintf(logfd, "Specific options %02x\n", p[i + 2]);
+            fprintf(logfd, "Specific options: ", p[i + 2]);
+	    if(p[i + 2]&1)
+            	fprintf(logfd, "GDA:");
+	    else
+            	fprintf(logfd, "VDA:");
+	    if(p[i + 2]&2)
+            	fprintf(logfd, "ESS:");
+	    else
+            	fprintf(logfd, "ESN:");
+	    if(p[i + 2]&4)
+            	fprintf(logfd, "IHS:");
+	    else
+            	fprintf(logfd, "IHN:");
+	    if(p[i + 2]&8)
+            	fprintf(logfd, "BHS:");
+	    else
+            	fprintf(logfd, "BHN:");
+	    if(p[i + 2]&0x10)
+            	fprintf(logfd, "BCS\n");
+	    else
+            	fprintf(logfd, "BCN\n");
             break;
         case 0x05:
             fprintf(logfd, "Expedited subnetwork connection %02x\n", p[i + 2]);
@@ -109,8 +153,8 @@ void outprivategr(unsigned char *p, int len)
                 break;
             }
         default:
+            fprintf(logfd, "unknown private id %02x\n", p[i]);
             if (verbose > 1) {
-                fprintf(logfd, "unknown private id %02x\n", p[i]);
                 dumpdata(&(p[i]), len + 2);
             }
 
@@ -124,7 +168,6 @@ void outxid(unsigned char *p, int len)
 {
     int i;
 
-    fprintf(logfd, "XID\n");
     i = 0;
     do {
         short glen = p[i + 1] * 256 + p[i + 2];

@@ -110,7 +110,5 @@ extern unsigned int reversebits(const unsigned int bits, const int n);
 extern unsigned short pppfcs16(unsigned char *cp, int len);
 extern int rs(unsigned char *data, int *eras_pos, int no_eras);
 
-extern int netconnect(char *inaddr);
-extern int transmit(unsigned int addr,char *st,int len,uint64_t tm);
-
+extern void out(msgblk_t *blk,unsigned char *hdata,int l);
 

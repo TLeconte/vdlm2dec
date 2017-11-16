@@ -34,14 +34,29 @@ static pthread_cond_t blkwcd;
 static msgblk_t *blkq_s = NULL;
 static msgblk_t *blkq_e = NULL;
 
-void dumpdata(unsigned char *p, int len)
+static void  check_frame(msgblk_t *blk,unsigned char *hdata,int l)
 {
-    int i;
+	int i,d;
+        unsigned short crc;
 
-    fprintf(logfd, "[ ");
-    for (i = 0; i < len; i++)
-        fprintf(logfd, "%02hhx ", p[i]);
-    fprintf(logfd, "]\n");
+        if (l < 13) {
+            if (verbose > 1)
+                fprintf(logfd, "#%d error too short\n",blk->chn+1);
+		return;
+        }
+
+        /* crc */
+        crc = PPPINITFCS16;
+        for (i = 1; i < l-1; i++) {
+            update_crc(crc, hdata[i]);
+        }
+        if (crc != PPPGOODFCS16) {
+            if (verbose > 1)
+                fprintf(logfd, "#%derror crc\n",blk->chn+1);
+		return;
+        }
+
+	out(blk,hdata,l);
 }
 
 static int set_eras(int *eras_pos, int nb)
@@ -68,10 +83,9 @@ static void *blk_thread(void *arg)
 {
     do {
         msgblk_t *blk;
-        int r, i, n, k, s, t;
-        unsigned short crc;
-        unsigned char hdata[17000];
-        int fec, nbera;
+        int i, n, k, r, s, t;
+        unsigned char hdata[65*249];
+        int nbera;
         int eras_pos[6];
 
         pthread_mutex_lock(&blkmtx);
@@ -97,9 +111,7 @@ static void *blk_thread(void *arg)
             }
 
             /* reed solomon FEC */
-            fec = rs(blk->data[r], eras_pos, nbera);
-            if (fec < 0)
-                break;
+            rs(blk->data[r], eras_pos, nbera);
 
             /* HDLC bit un stuffing */
             for (i = 0; i < by; i++) {
@@ -117,96 +129,25 @@ static void *blk_thread(void *arg)
                     }
                     s++;
                     if (s == 8) {
-                        k++;
-                        hdata[k] = 0;
                         s = 0;
+			if(hdata[k]==0x7e) {
+			  if(k==0) {
+				 k++;hdata[k] = 0;
+			  } else
+			    if(k==1) {
+				 hdata[1] = 0;
+			    }  else
+		  	     if(k>1) {
+				  check_frame(blk,hdata,k+1);
+				  k++;hdata[k] = 0;
+			     }
+			} else
+			  if(k>0) {
+				 k++;hdata[k] = 0;
+			  }
                     }
                 }
             }
-
-        }
-
-        if (fec < 0) {
-            if (verbose > 1)
-                fprintf(logfd, "#%d error fec\n",blk->chn+1);
-            free(blk);
-            continue;
-        }
-
-        if (k < 13) {
-            if (verbose > 1)
-                fprintf(logfd, "#%d error too short\n",blk->chn+1);
-            continue;
-        }
-
-        /* crc */
-        crc = PPPINITFCS16;
-        for (i = 1; i <= k - 2; i++) {
-            update_crc(crc, hdata[i]);
-        }
-        if (crc != PPPGOODFCS16) {
-            if (verbose > 1)
-                fprintf(logfd, "#%derror crc\n",blk->chn+1);
-            free(blk);
-            continue;
-        }
-
-        if (verbose > 1)
-            fprintf(logfd, "#%01d ppm: %2.0f received len:%d\n", blk->chn+1,blk->ppm,k);
-
-
-        if (verbose) {
-            int rep = hdata[5] & 2;
-            unsigned int toaddr =
-                (reversebits(hdata[1] >> 2, 6) << 21) | (reversebits(hdata[2] >> 1, 7) << 14) |
-                (reversebits(hdata[3] >> 1, 7) << 7) | (reversebits(hdata[4] >> 1, 7));
-            unsigned int fraddr =
-                (reversebits(hdata[5] >> 2, 6) << 21) | (reversebits(hdata[6] >> 1, 7) << 14) |
-                (reversebits(hdata[7] >> 1, 7) << 7) | (reversebits(hdata[8] >> 1, 7));
-
-            fprintf(logfd, "%s from %s %06x to %06x\n", rep ? "response" : "command",
-                    	(hdata[1] & 2) ? "ground" : "airborne", fraddr & 0xffffff, toaddr & 0xffffff);
-
-            fprintf(logfd, "Link Control : ");
-            if (hdata[9] & 1) {
-                if (hdata[9] & 2) {
-                    fprintf(logfd, "U ");
-                    fprintf(logfd, "%c ", (hdata[9] & 0x10) ? (rep ? 'F' : 'P') : '-');
-                    fprintf(logfd, "%01x %01x\n", (hdata[9] >> 5) & 0x7, (hdata[9] >> 2) & 0x3);
-                } else {
-                    fprintf(logfd, "S ");
-                    fprintf(logfd, "%c ", (hdata[9] & 0x10) ? (rep ? 'F' : 'P') : '-');
-                    fprintf(logfd, "Nr:%01d %01x\n", (hdata[9] >> 5) & 0x7, (hdata[9] >> 2) & 0x3);
-                }
-            } else {
-                fprintf(logfd, "I ");
-                fprintf(logfd, "%c ", (hdata[9] & 0x10) ? (rep ? 'F' : 'P') : '-');
-                fprintf(logfd, "Ns:%01d Nr:%01d\n", (hdata[9] >> 1) & 0x7, (hdata[9] >> 5) & 0x7);
-            }
-            r = 0;
-
-            if (k == 13) {
-                if (verbose > 1)
-                    fprintf(logfd, "empty\n");
-                r = 1;
-            }
-
-            if (k >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-                outacars(&(hdata[13]), k - 16);
-                r = 1;
-            }
-            if (k >= 14 && hdata[10] == 0x82) {
-                outxid(&(hdata[11]), k - 14);
-                r = 1;
-            }
-
-            if (r == 0) {
-                fprintf(logfd, "not decoded\n");
-                if (verbose > 1)
-                    dumpdata(&(hdata[10]), k - 13);
-            }
-            fprintf(logfd, "-----------------------------------------------------------------------\n");
-            fflush(logfd);
 
         }
 
@@ -215,6 +156,7 @@ static void *blk_thread(void *arg)
 
     return NULL;
 }
+
 
 int initVdlm2(channel_t *ch)
 {
