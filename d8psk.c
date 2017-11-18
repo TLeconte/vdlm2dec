@@ -220,9 +220,8 @@ static inline float filteredphase(channel_t *ch)
     int i,k;
     complex float S = 0;
 
-    for (i = 0; i*4+ch->clk < 4*MFLTLEN; i++) {
-        k = (ch->ink + i) % MFLTLEN;
-        S += ch->Inbuff[k] * mflt[i*4+ch->clk];
+    for (i=ch->clk,k=ch->ink; i< MFLTLEN;i=i+4,k=(k+1)%MBUFLEN) {
+        S += ch->Inbuff[k] * mflt[i];
     }
     /* phase */
     return cargf(S);
@@ -237,7 +236,7 @@ static inline void demodD8psk(channel_t *ch,const complex float E)
     float d[4];
 
     ch->Inbuff[ch->ink] = E;
-    ch->ink = (ch->ink + 1) % MFLTLEN;
+    ch->ink = (ch->ink + 1) % MBUFLEN;
 
     ch->clk+=4;
 

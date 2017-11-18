@@ -28,7 +28,8 @@
 #define RTLINRATE (RTLMULT*INTRATE)
 #define RTLINBUFSZ (RTLMULT*4096)
 
-#define MFLTLEN 16
+#define MFLTLEN 65
+#define MBUFLEN 17
 
 typedef struct mskblk_s {
     struct mskblk_s *prev;
@@ -47,7 +48,7 @@ typedef struct {
 
 #define NBPH 17
 typedef struct {
-    complex float Inbuff[MFLTLEN];
+    complex float Inbuff[MBUFLEN];
     float Ph[NBPH * RTLDWN];
 
     int chn;
