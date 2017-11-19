@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016 Thierry Leconte
+ *  Copyright (c) 2017 Thierry Leconte
  *
  *   
  *   This code is free software; you can redistribute it and/or modify
@@ -28,7 +28,6 @@
 static struct timespec ftime;
 static unsigned int ink;
 
-
 int initD8psk(channel_t *ch)
 {
     ch->ink = 0;
@@ -36,7 +35,6 @@ int initD8psk(channel_t *ch)
     ch->df = 0;
     ch->perr = 100;
     ch->P1 = 0;
-    ch->Posc = 0;
 
     return 0;
 }
@@ -83,6 +81,7 @@ static void putbit(channel_t *ch,const float SV)
         {
             unsigned int bits, len;
 
+            if(ch->nbits<3) V=0;
             viterbi_add(V, ch->nbits);
             ch->nbits++;
             if (ch->nbits < 25)
@@ -253,16 +252,16 @@ static inline void demodD8psk(channel_t *ch,const complex float E)
 
 	P=filteredphase(ch);
 
-        ch->Phidx = (ch->Phidx + 1) % (NBPH * RTLDWN);
+        ch->Phidx = (ch->Phidx + 1) % (NBPH * D8DWN);
         ch->Ph[ch->Phidx] = P;
 
         /* detect sync */
 
         Pu = 0;
-        M = Pv = Pr[0] = ch->Ph[(ch->Phidx + RTLDWN) % (NBPH * RTLDWN)] - SW[0];
+        M = Pv = Pr[0] = ch->Ph[(ch->Phidx + D8DWN) % (NBPH * D8DWN)] - SW[0];
         for (l = 1; l < NBPH; l++) {
             float Pc, Pd;
-            Pc = ch->Ph[(ch->Phidx + (l + 1) * RTLDWN) % (NBPH * RTLDWN)] - SW[l];
+            Pc = ch->Ph[(ch->Phidx + (l + 1) * D8DWN) % (NBPH * D8DWN)] - SW[l];
             /* unwarp */
             Pd = Pc - Pv;
             Pv = Pc;
@@ -343,10 +342,24 @@ void *rcv_thread(void *arg)
 
    ch.chn=param->chn;
    ch.Fr=param->Fr;
-   ch.Fosc=param->Fosc;
+
+   int clk=0;
+   int nf=0;
+   int no,swf;
+   float Fo;
+   complex float D=0;
+   complex float wf[SDRINRATE/STEPRATE];
 
    initD8psk(&ch);
    initVdlm2(&ch);
+
+   /* pre compute local Osc */
+   swf=abs(SDRINRATE/ch.Fr);
+   Fo=(float)ch.Fr/(float)(SDRINRATE) * 2.0 * M_PI;
+   for(no=0;no< swf;no++) {
+         wf[no]=cexpf(-no*Fo*I);
+   }
+   no=0;
 
    pthread_barrier_wait(&Bar1);
    do {
@@ -354,20 +367,20 @@ void *rcv_thread(void *arg)
 
      pthread_barrier_wait(&Bar2);
 
-     for (i = 0; i < RTLINBUFSZ/2;) {
-           int ind;
-     	   complex float D;
+     for (i = 0; i < RTLINBUFSZ/2;i++) {
 
-           D = 0;
-     	   for (ind = 0; ind < RTLMULT; ind++) {
+         D+=Cbuff[i]*wf[no]; nf++;
 
-               D+=Cbuff[i++]*cexpf(-ch.Posc*I);
+	 no=(no+1)%swf; 
 
-               ch.Posc+=ch.Fosc;
-               if(ch.Posc>M_PI) ch.Posc-=2*M_PI;
-               if(ch.Posc<-M_PI) ch.Posc+=2*M_PI;
-           }
+	 /* rought downsample */
+	 clk+=21;
+	 if(clk>=SDRCLK) {
+	   clk%=SDRCLK;
+	   D/=nf; 
            demodD8psk(&ch,D);
+	   D=0;nf=0;
+	 }
      }
      pthread_barrier_wait(&Bar1);
    } while(1);

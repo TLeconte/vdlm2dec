@@ -22,15 +22,17 @@
 
 #define MAXNBCHANNELS 8
 
-#define RTLMULT 24
-#define RTLDWN 4
-#define INTRATE  10500*2*RTLDWN
-#define RTLINRATE (RTLMULT*INTRATE)
-#define RTLINBUFSZ (RTLMULT*4096)
+#define SDRINRATE 2000000
+#define SDRCLK  500
+// #define SDRINRATE 2500000
+// #define SDRCLK  625
+
+#define STEPRATE 25000
+
+#define RTLINBUFSZ (16*4096)
 
 #define MFLTLEN 65
 #define MBUFLEN 17
-
 typedef struct mskblk_s {
     struct mskblk_s *prev;
     int chn;
@@ -42,21 +44,19 @@ typedef struct mskblk_s {
 
 typedef struct {
     int chn;
-    float Fr;
-    float Fosc;
+    int Fr;
 } thread_param_t;
 
 #define NBPH 17
+#define D8DWN 4
 typedef struct {
     complex float Inbuff[MBUFLEN];
-    float Ph[NBPH * RTLDWN];
+    float Ph[NBPH * D8DWN];
 
     int chn;
-    float Fr;
-    float Posc,Fosc;
+    int Fr;
     int ink,Phidx;
-    float df, lv;
-    unsigned int nlv;
+    float df;
     int clk;
     float p2err, perr;
     float pfr;

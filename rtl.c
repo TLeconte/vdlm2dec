@@ -112,7 +112,7 @@ int verbose_device_search(char *s)
 	return -1;
 }
 
-static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
+static unsigned int chooseFc(unsigned int *Fd, const unsigned int nbch)
 {
 	int n;
 	int ne;
@@ -130,16 +130,16 @@ static unsigned int chooseFc(unsigned int *Fd, unsigned int nbch)
 		}
 	} while (ne);
 
-	if ((Fd[nbch - 1] - Fd[0]) > RTLINRATE - 4 * INTRATE) {
+	if ((Fd[nbch - 1] - Fd[0]) > SDRINRATE - 4 * STEPRATE) {
 		fprintf(stderr, "Frequencies too far apart\n");
 		return 0;
 	}
 
-	for (Fc = Fd[nbch - 1] + 2 * INTRATE; Fc > Fd[0] - 2 * INTRATE; Fc--) {
+	for (Fc = Fd[nbch - 1] + 2 * STEPRATE; Fc > Fd[0] - 2 * STEPRATE; Fc--) {
 		for (n = 0; n < nbch; n++) {
-			if (abs(Fc - Fd[n]) > RTLINRATE / 2 - 2 * INTRATE)
+			if (abs(Fc - Fd[n]) > SDRINRATE / 2 - 2 * STEPRATE)
 				break;
-			if (abs(Fc - Fd[n]) < 2 * INTRATE)
+			if (abs(Fc - Fd[n]) < 2 * STEPRATE)
 				break;
 			if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
 				break;
@@ -213,12 +213,11 @@ int initRtl(char **argv, int optind, thread_param_t *param)
 		Fd[nbch] = (int)(1000000 * atof(argF));
 		optind++;
 		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
-			fprintf(stderr, "WARNING: Invalid frequency %d\n",
-				Fd[nbch]);
+			fprintf(stderr, "WARNING: Invalid frequency %d\n", Fd[nbch]);
 			continue;
 		}
 		param[nbch].chn = nbch;
-		param[nbch].Fr = (float)Fd[nbch];
+		param[nbch].Fr = Fd[nbch];
 		nbch++;
 	};
 	if (nbch > MAXNBCHANNELS)
@@ -236,7 +235,7 @@ int initRtl(char **argv, int optind, thread_param_t *param)
 		return 1;
 
 	for (n = 0; n < nbch; n++) {
-		param[n].Fosc = (param[n].Fr - (float)Fc) / (float)(RTLINRATE) * 2.0 * M_PI;
+		param[n].Fr -= Fc;
 	}
 
 	if (verbose)
@@ -248,7 +247,7 @@ int initRtl(char **argv, int optind, thread_param_t *param)
 		return 1;
 	}
 
-	r = rtlsdr_set_sample_rate(dev, RTLINRATE);
+	r = rtlsdr_set_sample_rate(dev, SDRINRATE);
 	if (r < 0) {
 		fprintf(stderr, "WARNING: Failed to set sample rate.\n");
 		return 1;
