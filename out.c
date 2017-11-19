@@ -102,7 +102,7 @@ void out(msgblk_t *blk,unsigned char *hdata,int l)
         int gnd = hdata[1] & 2;
 
             fprintf(logfd, "-----------------------------------------------------------------------\n");
-            fprintf(logfd, "%s ", rep ? "Response":"Command");
+            fprintf(logfd, "#%1d %s ", blk->chn+1,rep ? "Response":"Command");
             fprintf(logfd, "from %s: ",gnd ? "Ground":"Aircraft"); outaddr(&(hdata[5]));
             fprintf(logfd, "to: ");outaddr(&(hdata[1]));
             fprintf(logfd, "\n");
@@ -126,8 +126,7 @@ void out(msgblk_t *blk,unsigned char *hdata,int l)
 
             if (d == 0) {
                 fprintf(logfd, "unknown data\n");
-                if (verbose > 1)
-                    dumpdata(&(hdata[10]), l - 13);
+                dumpdata(&(hdata[10]), l - 13);
             }
             fflush(logfd);
 
