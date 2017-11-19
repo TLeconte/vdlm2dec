@@ -33,9 +33,3 @@ It depends on some external libraries :
  2) Guess an average
  3) set the -p option as the opposite of this average
 
-## TODO
-
- * improve demodulator CPU usage
- * decode more vdlm2 protocols (looking for info)
- * send ACARS to acarsserv or planeploter (easy copy/paste from acarsdec sources: I accept commit requests :-) )
- * lots of other things
