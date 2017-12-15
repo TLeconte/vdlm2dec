@@ -30,6 +30,8 @@
 extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
 
+unsigned int Fc;
+
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
 
@@ -180,7 +182,6 @@ int initRtl(char **argv, int optind, thread_param_t * param)
 	int r, n;
 	int dev_index;
 	char *argF;
-	unsigned int Fc;
 	unsigned int Fd[MAXNBCHANNELS];
 
 	if (argv[optind] == NULL) {

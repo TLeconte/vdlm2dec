@@ -25,6 +25,8 @@
 #include "vdlm2.h"
 #include "d8psk.h"
 
+extern unsigned int Fc;
+
 static struct timespec ftime;
 static unsigned int ink;
 
@@ -98,27 +100,18 @@ static void putbit(channel_t * ch, const float SV)
 			ch->nlbyte = ch->blk->nlbyte = (len % 1992 + 7) / 8;
 
 			if (len < 12 * 8) {
-				if (verbose > 1)
-					fprintf(stderr,
-						"error too short %d #%d\n", len,
-						ch->chn + 1);
+				//fprintf(stderr, "error too short %d #%d\n", len, ch->chn + 1);
 				ch->state = WSYNC;
 				return;
 			}
 
 			if (ch->blk->nbrow > 8) {
-				if (verbose > 1)
-					fprintf(stderr,
-						"error too long %d #%d\n",
-						ch->blk->nbrow, ch->chn);
+				//fprintf(stderr, "error too long %d #%d\n", ch->blk->nbrow, ch->chn);
 				ch->state = WSYNC;
 				return;
 			}
 
-			if (verbose > 1)
-				fprintf(stderr, "#%d %d row %d %d\n",
-					ch->chn + 1, len, ch->nbrow,
-					ch->nlbyte);
+			// fprintf(stderr, "#%d %d row %d %d\n", ch->chn + 1, len, ch->nbrow, ch->nlbyte);
 
 			ch->state = GETDATA;
 			ch->nrow = ch->nbyte = 0;
@@ -313,14 +306,12 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 			ch->scrambler = 0x4D4B;
 			viterbi_init();
 			ch->df = ch->pfr;
-			ch->blk->ppm =
-			    10500 * ch->df / (2 * M_PI * ch->Fr) * 1e6;
+			ch->blk->ppm = 10500*ch->df/(2.0*M_PI*(ch->Fr+Fc))*1e6;
 			of = 4 * (ch->p2err - 4 * ch->perr +
 				  3 * err) / (ch->p2err - 2 * ch->perr + err);
 			ch->clk = (int)roundf(of);
 			ch->P1 = filteredphase(ch);
 
-			//fprintf(stderr,"head %f %d %f %f\n",of,ch->clk, err,ch->df);
 			ch->perr = ch->p2err = 500;
 		} else {
 			ch->p2err = ch->perr;

@@ -109,6 +109,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 	fprintf(logfd,
 		"-----------------------------------------------------------------------\n");
+	if(verbose >1) fprintf(logfd,"ppm %.1f\n",blk->ppm);
 	fprintf(logfd, "#%1d %s ", blk->chn + 1, rep ? "Response" : "Command");
 	fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
 	outaddr(&(hdata[5]));
@@ -118,25 +119,27 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 	outlinkctrl(hdata[9], rep);
 
-	d = 0;
+        if(verbose >0) {
+		d = 0;
 
-	if (l == 13) {
-		d = 1;
-	}
+		if (l == 13) {
+			d = 1;
+		}
 
-	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(&(hdata[13]), l - 16);
-		d = 1;
-	}
-	if (l >= 14 && hdata[10] == 0x82) {
-		outxid(&(hdata[11]), l - 14);
-		d = 1;
-	}
+		if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
+			outacars(&(hdata[13]), l - 16);
+			d = 1;
+		}
+		if (l >= 14 && hdata[10] == 0x82) {
+			outxid(&(hdata[11]), l - 14);
+			d = 1;
+		}
 
-	if (d == 0) {
-		fprintf(logfd, "unknown data\n");
-		dumpdata(&(hdata[10]), l - 13);
-	}
+		if (d == 0) {
+			fprintf(logfd, "unknown data\n");
+			if(verbose > 1) dumpdata(&(hdata[10]), l - 13);
+		}
+        }
 	fflush(logfd);
 
 }

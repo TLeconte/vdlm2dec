@@ -59,7 +59,7 @@ static void usage(void)
 		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
-	fprintf(stderr, " -v :\t\t\tverbose\n");
+	fprintf(stderr, " -v n:\t\t\tverbose  0 : header only , 1 : normal, 2 : data dump\n");
 	fprintf(stderr, " -q :\t\t\tquiet\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
 	exit(1);
@@ -83,10 +83,11 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stderr;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:")) != EOF) {
+	while ((c = getopt(argc, argv, "v:qrp:g:l:")) != EOF) {
 		switch (c) {
 		case 'v':
-			verbose = 2;
+			verbose = atoi(optarg);
+			if(verbose>3) verbose=3;
 			break;
 		case 'q':
 			verbose = 0;

@@ -29,7 +29,7 @@ It depends on some external libraries :
  * libusb
 
 ## Frequency correction
- 1) In verbose mode, read the ppm displayed for each message.
- 2) Guess an average
- 3) set the -p option as the opposite of this average
+ 1) In verbose mode 2 , read the ppm displayed for each message.
+ 2) Guess an average, round to near integer
+ 3) set the -p option as the opposite of this number
 

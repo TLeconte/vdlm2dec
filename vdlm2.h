@@ -24,8 +24,8 @@
 
 #define SDRINRATE 2000000
 #define SDRCLK  500
-// #define SDRINRATE 2500000
-// #define SDRCLK  625
+//#define SDRINRATE 2500000
+//#define SDRCLK  625
 
 #define STEPRATE 25000
 

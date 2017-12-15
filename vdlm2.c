@@ -40,7 +40,7 @@ static void check_frame(msgblk_t * blk, unsigned char *hdata, int l)
 	unsigned short crc;
 
 	if (l < 13) {
-		if (verbose > 1)
+		if (verbose > 2)
 			fprintf(logfd, "#%d error too short\n", blk->chn + 1);
 		return;
 	}
@@ -51,8 +51,8 @@ static void check_frame(msgblk_t * blk, unsigned char *hdata, int l)
 		update_crc(crc, hdata[i]);
 	}
 	if (crc != PPPGOODFCS16) {
-		if (verbose > 1)
-			fprintf(logfd, "#%derror crc\n", blk->chn + 1);
+		if (verbose > 2)
+			fprintf(logfd, "#%d error crc\n", blk->chn + 1);
 		return;
 	}
 
