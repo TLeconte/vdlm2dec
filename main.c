@@ -46,12 +46,12 @@ FILE *logfd;
 static void usage(void)
 {
 	fprintf(stderr,
-		"vdlm2dec V1.0 Copyright (c) 2016 Thierry Leconte \n\n");
+		"vdlm2dec V2.0 Copyright (c) 2016-2017 Thierry Leconte \n\n");
 	fprintf(stderr, "Usage: vdlm2dec  [-v|V] [-l logfile] ");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
 #endif
-	fprintf(stderr, " Frequency(Mhz)\n");
+	fprintf(stderr, " Frequencies(Mhz)\n");
 #ifdef WITH_RTL
 	fprintf(stderr,
 		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber \n");
