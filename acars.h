@@ -17,25 +17,25 @@
  *
  */
 typedef struct {
-    char mode;
-    char reg[8];
-    char ack;
-    char label[3];
-    char bid;
-    char no[5];
-    char fid[7];
-    char bs, be;
-    char txt[17000];
+	char mode;
+	char reg[8];
+	char ack;
+	char label[3];
+	char bid;
+	char no[5];
+	char fid[7];
+	char bs, be;
+	char txt[17000];
 } acarsmsg_t;
 
 typedef struct {
-    char da[5];
-    char sa[5];
-    char eta[5];
-    char gout[5];
-    char gin[5];
-    char woff[5];
-    char won[5];
+	char da[5];
+	char sa[5];
+	char eta[5];
+	char gout[5];
+	char gin[5];
+	char woff[5];
+	char won[5];
 } oooi_t;
 
 extern void outacars(unsigned char *txt, int len);

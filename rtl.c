@@ -28,7 +28,7 @@
 #include "vdlm2.h"
 
 extern int nbch;
-extern pthread_barrier_t Bar1,Bar2;
+extern pthread_barrier_t Bar1, Bar2;
 
 static rtlsdr_dev_t *dev = NULL;
 static int status = 0;
@@ -175,7 +175,7 @@ int nearest_gain(int target_gain)
 	return close_gain;
 }
 
-int initRtl(char **argv, int optind, thread_param_t *param)
+int initRtl(char **argv, int optind, thread_param_t * param)
 {
 	int r, n;
 	int dev_index;
@@ -213,7 +213,8 @@ int initRtl(char **argv, int optind, thread_param_t *param)
 		Fd[nbch] = (int)(1000000 * atof(argF));
 		optind++;
 		if (Fd[nbch] < 118000000 || Fd[nbch] > 138000000) {
-			fprintf(stderr, "WARNING: Invalid frequency %d\n", Fd[nbch]);
+			fprintf(stderr, "WARNING: Invalid frequency %d\n",
+				Fd[nbch]);
 			continue;
 		}
 		param[nbch].chn = nbch;
@@ -262,7 +263,7 @@ int initRtl(char **argv, int optind, thread_param_t *param)
 	return 0;
 }
 
-complex float Cbuff[RTLINBUFSZ/2];
+complex float Cbuff[RTLINBUFSZ / 2];
 void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
 	int i;
@@ -273,12 +274,14 @@ void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 	}
 
 	pthread_barrier_wait(&Bar1);
-	
+
 	for (i = 0; i < RTLINBUFSZ;) {
 		float r, g;
-		r = (float)rtlinbuff[i] - (float)127.5; i++;
-		g = (float)rtlinbuff[i] - (float)127.5; i++;
-		Cbuff[i/2]=r+g*I;
+		r = (float)rtlinbuff[i] - (float)127.5;
+		i++;
+		g = (float)rtlinbuff[i] - (float)127.5;
+		i++;
+		Cbuff[i / 2] = r + g * I;
 	}
 
 	pthread_barrier_wait(&Bar2);

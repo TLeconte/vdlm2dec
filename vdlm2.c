@@ -26,177 +26,180 @@
 #include "acars.h"
 #include "crc.h"
 
-#define PPPINITFCS16    0xffff  /* Initial FCS value */
-#define PPPGOODFCS16    0xf0b8  /* Good final FCS value */
+#define PPPINITFCS16    0xffff	/* Initial FCS value */
+#define PPPGOODFCS16    0xf0b8	/* Good final FCS value */
 
 static pthread_mutex_t blkmtx;
 static pthread_cond_t blkwcd;
 static msgblk_t *blkq_s = NULL;
 static msgblk_t *blkq_e = NULL;
 
-static void  check_frame(msgblk_t *blk,unsigned char *hdata,int l)
+static void check_frame(msgblk_t * blk, unsigned char *hdata, int l)
 {
-	int i,d;
-        unsigned short crc;
+	int i, d;
+	unsigned short crc;
 
-        if (l < 13) {
-            if (verbose > 1)
-                fprintf(logfd, "#%d error too short\n",blk->chn+1);
+	if (l < 13) {
+		if (verbose > 1)
+			fprintf(logfd, "#%d error too short\n", blk->chn + 1);
 		return;
-        }
+	}
 
-        /* crc */
-        crc = PPPINITFCS16;
-        for (i = 1; i < l-1; i++) {
-            update_crc(crc, hdata[i]);
-        }
-        if (crc != PPPGOODFCS16) {
-            if (verbose > 1)
-                fprintf(logfd, "#%derror crc\n",blk->chn+1);
+	/* crc */
+	crc = PPPINITFCS16;
+	for (i = 1; i < l - 1; i++) {
+		update_crc(crc, hdata[i]);
+	}
+	if (crc != PPPGOODFCS16) {
+		if (verbose > 1)
+			fprintf(logfd, "#%derror crc\n", blk->chn + 1);
 		return;
-        }
+	}
 
-	out(blk,hdata,l);
+	out(blk, hdata, l);
 }
 
 static int set_eras(int *eras_pos, int nb)
 {
-    int i, nbera = 0;
+	int i, nbera = 0;
 
-    if (nb <= 67) {
-        nbera = 2;
-        eras_pos[0] = 253;
-        eras_pos[1] = 254;
-    }
-    if (nb <= 30) {
-        nbera = 4;
-        eras_pos[0] = 251;
-        eras_pos[1] = 252;
-        eras_pos[2] = 253;
-        eras_pos[3] = 254;
-    }
+	if (nb <= 67) {
+		nbera = 2;
+		eras_pos[0] = 253;
+		eras_pos[1] = 254;
+	}
+	if (nb <= 30) {
+		nbera = 4;
+		eras_pos[0] = 251;
+		eras_pos[1] = 252;
+		eras_pos[2] = 253;
+		eras_pos[3] = 254;
+	}
 
-    return nbera;
+	return nbera;
 }
 
 static void *blk_thread(void *arg)
 {
-    do {
-        msgblk_t *blk;
-        int i, n, k, r, s, t;
-        unsigned char hdata[65*249];
-        int nbera;
-        int eras_pos[6];
+	do {
+		msgblk_t *blk;
+		int i, n, k, r, s, t;
+		unsigned char hdata[65 * 249];
+		int nbera;
+		int eras_pos[6];
 
-        pthread_mutex_lock(&blkmtx);
-        while (blkq_e == NULL)
-            pthread_cond_wait(&blkwcd, &blkmtx);
+		pthread_mutex_lock(&blkmtx);
+		while (blkq_e == NULL)
+			pthread_cond_wait(&blkwcd, &blkmtx);
 
-        blk = blkq_e;
-        blkq_e = blk->prev;
-        if (blkq_e == NULL)
-            blkq_s = NULL;
-        pthread_mutex_unlock(&blkmtx);
+		blk = blkq_e;
+		blkq_e = blk->prev;
+		if (blkq_e == NULL)
+			blkq_s = NULL;
+		pthread_mutex_unlock(&blkmtx);
 
-        k = s = t = 0;
-        hdata[k] = 0;
-        for (r = 0; r < blk->nbrow; r++) {
-            int by;
+		k = s = t = 0;
+		hdata[k] = 0;
+		for (r = 0; r < blk->nbrow; r++) {
+			int by;
 
-            if (r == blk->nbrow - 1) {
-                by = blk->nlbyte;
-            	nbera = set_eras(eras_pos, by);
-            } else {
-                by = 249;nbera=0;
-            }
+			if (r == blk->nbrow - 1) {
+				by = blk->nlbyte;
+				nbera = set_eras(eras_pos, by);
+			} else {
+				by = 249;
+				nbera = 0;
+			}
 
-            /* reed solomon FEC */
-            rs(blk->data[r], eras_pos, nbera);
+			/* reed solomon FEC */
+			rs(blk->data[r], eras_pos, nbera);
 
-            /* HDLC bit un stuffing */
-            for (i = 0; i < by; i++) {
+			/* HDLC bit un stuffing */
+			for (i = 0; i < by; i++) {
 
-                for (n = 0; n < 8; n++) {
-                    if (blk->data[r][i] & (1 << n)) {
-                        hdata[k] |= 1 << s;
-                        t++;
-                    } else {
-                        if (t == 5) {
-                            t = 0;
-                            continue;
-                        }
-                        t = 0;
-                    }
-                    s++;
-                    if (s == 8) {
-                        s = 0;
-			if(hdata[k]==0x7e) {
-			  if(k==0) {
-				 k++;hdata[k] = 0;
-			  } else
-			    if(k==1) {
-				 hdata[1] = 0;
-			    }  else
-		  	     if(k>1) {
-				  check_frame(blk,hdata,k+1);
-				  k++;hdata[k] = 0;
-			     }
-			} else
-			  if(k>0) {
-				 k++;hdata[k] = 0;
-			  }
-                    }
-                }
-            }
+				for (n = 0; n < 8; n++) {
+					if (blk->data[r][i] & (1 << n)) {
+						hdata[k] |= 1 << s;
+						t++;
+					} else {
+						if (t == 5) {
+							t = 0;
+							continue;
+						}
+						t = 0;
+					}
+					s++;
+					if (s == 8) {
+						s = 0;
+						if (hdata[k] == 0x7e) {
+							if (k == 0) {
+								k++;
+								hdata[k] = 0;
+							} else if (k == 1) {
+								hdata[1] = 0;
+							} else if (k > 1) {
+								check_frame(blk,
+									    hdata,
+									    k +
+									    1);
+								k++;
+								hdata[k] = 0;
+							}
+						} else if (k > 0) {
+							k++;
+							hdata[k] = 0;
+						}
+					}
+				}
+			}
 
-        }
+		}
 
-        free(blk);
-    } while (1);
+		free(blk);
+	} while (1);
 
-    return NULL;
+	return NULL;
 }
 
-
-int initVdlm2(channel_t *ch)
+int initVdlm2(channel_t * ch)
 {
-    pthread_t th;
+	pthread_t th;
 
-    ch->state = WSYNC;
-    ch->blk = calloc(sizeof(msgblk_t), 1);
-    ch->blk->chn=ch->chn;
+	ch->state = WSYNC;
+	ch->blk = calloc(sizeof(msgblk_t), 1);
+	ch->blk->chn = ch->chn;
 
-    if(ch->chn==0) {
-    	pthread_mutex_init(&blkmtx, NULL);
-    	pthread_cond_init(&blkwcd, NULL);
+	if (ch->chn == 0) {
+		pthread_mutex_init(&blkmtx, NULL);
+		pthread_cond_init(&blkwcd, NULL);
 
-    	pthread_create(&th, NULL, blk_thread, NULL);
-    }
+		pthread_create(&th, NULL, blk_thread, NULL);
+	}
 
-    return 0;
+	return 0;
 }
 
 void stopVdlm2(void)
 {
-    int c;
-    for (c = 0; blkq_e && c < 5; c++)
-        sleep(1);
+	int c;
+	for (c = 0; blkq_e && c < 5; c++)
+		sleep(1);
 }
 
-void decodeVdlm2(channel_t *ch)
+void decodeVdlm2(channel_t * ch)
 {
-    pthread_mutex_lock(&blkmtx);
-    ch->blk->prev = NULL;
-    if (blkq_s)
-        blkq_s->prev = ch->blk;
-    blkq_s = ch->blk;
-    if (blkq_e == NULL)
-        blkq_e = blkq_s;
-    pthread_cond_signal(&blkwcd);
-    pthread_mutex_unlock(&blkmtx);
+	pthread_mutex_lock(&blkmtx);
+	ch->blk->prev = NULL;
+	if (blkq_s)
+		blkq_s->prev = ch->blk;
+	blkq_s = ch->blk;
+	if (blkq_e == NULL)
+		blkq_e = blkq_s;
+	pthread_cond_signal(&blkwcd);
+	pthread_mutex_unlock(&blkmtx);
 
-    ch->blk = calloc(sizeof(msgblk_t), 1);
-    ch->blk->chn=ch->chn;
+	ch->blk = calloc(sizeof(msgblk_t), 1);
+	ch->blk->chn = ch->chn;
 
-    return;
+	return;
 }

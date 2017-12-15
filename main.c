@@ -39,107 +39,110 @@ int ppm = 0;
 int nbch;
 thread_param_t tparam[MAXNBCHANNELS];
 
-pthread_barrier_t Bar1,Bar2;
+pthread_barrier_t Bar1, Bar2;
 
 FILE *logfd;
 
 static void usage(void)
 {
-    fprintf(stderr, "vdlm2dec V1.0 Copyright (c) 2016 Thierry Leconte \n\n");
-    fprintf(stderr, "Usage: vdlm2dec  [-v|V] [-l logfile] ");
+	fprintf(stderr,
+		"vdlm2dec V1.0 Copyright (c) 2016 Thierry Leconte \n\n");
+	fprintf(stderr, "Usage: vdlm2dec  [-v|V] [-l logfile] ");
 #ifdef WITH_RTL
-    fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
+	fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
 #endif
-    fprintf(stderr, " Frequency(Mhz)\n");
+	fprintf(stderr, " Frequency(Mhz)\n");
 #ifdef WITH_RTL
-    fprintf(stderr, " -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber \n");
-    fprintf(stderr, " -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
-    fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
+	fprintf(stderr,
+		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber \n");
+	fprintf(stderr,
+		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
+	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
-    fprintf(stderr, " -v :\t\t\tverbose\n");
-    fprintf(stderr, " -q :\t\t\tquiet\n");
-    fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
-    exit(1);
+	fprintf(stderr, " -v :\t\t\tverbose\n");
+	fprintf(stderr, " -q :\t\t\tquiet\n");
+	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
+	exit(1);
 }
 
 static void sighandler(int signum)
 {
-    stopVdlm2();
-    exit(1);
+	stopVdlm2();
+	exit(1);
 }
 
 int main(int argc, char **argv)
 {
-    int c;
-    int res, n;
-    struct sigaction sigact;
-    char *fname;
-    int rdev;
-    double freq;
+	int c;
+	int res, n;
+	struct sigaction sigact;
+	char *fname;
+	int rdev;
+	double freq;
 
-    nbch=0;
-    logfd = stderr;
+	nbch = 0;
+	logfd = stderr;
 
-    while ((c = getopt(argc, argv, "vqrp:g:l:")) != EOF) {
-        switch (c) {
-        case 'v':
-            verbose = 2;
-            break;
-        case 'q':
-            verbose = 0;
-            break;
-        case 'l':
-            logfd = fopen(optarg, "w+");
-            if (logfd == NULL) {
-                fprintf(stderr, "unable top open %s\n", optarg);
-                exit(1);
-            }
-            break;
+	while ((c = getopt(argc, argv, "vqrp:g:l:")) != EOF) {
+		switch (c) {
+		case 'v':
+			verbose = 2;
+			break;
+		case 'q':
+			verbose = 0;
+			break;
+		case 'l':
+			logfd = fopen(optarg, "w+");
+			if (logfd == NULL) {
+				fprintf(stderr, "unable top open %s\n", optarg);
+				exit(1);
+			}
+			break;
 #ifdef WITH_RTL
-        case 'r':
-            res = initRtl(argv, optind,tparam);
-            break;
-        case 'g':
-            gain = atoi(optarg);
-            break;
-        case 'p':
-            ppm = atoi(optarg);
-            break;
+		case 'r':
+			res = initRtl(argv, optind, tparam);
+			break;
+		case 'g':
+			gain = atoi(optarg);
+			break;
+		case 'p':
+			ppm = atoi(optarg);
+			break;
 #endif
-        default:
-            usage();
-            return (1);
-        }
-    }
+		default:
+			usage();
+			return (1);
+		}
+	}
 
-    if (res) {
-        fprintf(stderr, "Unable to init input\n");
-        exit(res);
-    }
+	if (res) {
+		fprintf(stderr, "Unable to init input\n");
+		exit(res);
+	}
 
-    sigact.sa_handler = sighandler;
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_flags = 0;
-    sigaction(SIGINT, &sigact, NULL);
-    sigaction(SIGTERM, &sigact, NULL);
-    sigaction(SIGQUIT, &sigact, NULL);
+	sigact.sa_handler = sighandler;
+	sigemptyset(&sigact.sa_mask);
+	sigact.sa_flags = 0;
+	sigaction(SIGINT, &sigact, NULL);
+	sigaction(SIGTERM, &sigact, NULL);
+	sigaction(SIGQUIT, &sigact, NULL);
 
-    pthread_barrier_init(&Bar1,NULL,nbch+1);
-    pthread_barrier_init(&Bar2,NULL,nbch+1);
+	pthread_barrier_init(&Bar1, NULL, nbch + 1);
+	pthread_barrier_init(&Bar2, NULL, nbch + 1);
 
-    for (n = 0; n < nbch; n++) {
-         pthread_t th;
-         pthread_create(&th, NULL, rcv_thread, &(tparam[n]));
-    }
+	for (n = 0; n < nbch; n++) {
+		pthread_t th;
+		pthread_create(&th, NULL, rcv_thread, &(tparam[n]));
+	}
 
 #if DEBUG
-    initSndWrite();
+	initSndWrite();
 #endif
 
-    runRtlSample();
+	runRtlSample();
 
-    stopVdlm2();
+	stopVdlm2();
 
-    exit(1);
+	exit(1);
 
 }

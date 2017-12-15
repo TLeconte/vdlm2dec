@@ -27,90 +27,71 @@ static int Bk[NBITS + 1][NBSTATES];
 static int B[NBITS + 1][NBSTATES];
 
 const int H[NBITS] = {
-    0b00110, 0b00111, 0b01001, 0b01010, 0b01011,
-    0b01100, 0b01110, 0b01111, 0b10001, 0b10011,
-    0b10101, 0b10110, 0b11000, 0b11001, 0b11010,
-    0b11011, 0b11100, 0b11101, 0b11110, 0b11111,
-    0b10000, 0b01000, 0b00100, 0b00010, 0b00001
+	0b00110, 0b00111, 0b01001, 0b01010, 0b01011,
+	0b01100, 0b01110, 0b01111, 0b10001, 0b10011,
+	0b10101, 0b10110, 0b11000, 0b11001, 0b11010,
+	0b11011, 0b11100, 0b11101, 0b11110, 0b11111,
+	0b10000, 0b01000, 0b00100, 0b00010, 0b00001
 };
 
 void viterbi_init(void)
 {
-    int s;
-    Pb[0][0] = 1.0;
-    for (s = 1; s < NBSTATES; s++)
-        Pb[0][s] = 0;
+	int s;
+	Pb[0][0] = 1.0;
+	for (s = 1; s < NBSTATES; s++)
+		Pb[0][s] = 0;
 
 }
 
 void viterbi_add(float V, int n)
 {
-    int s;
+	int s;
 
-    for (s = 0; s < NBSTATES; s++)
-        Pb[n + 1][s] = 0;
+	for (s = 0; s < NBSTATES; s++)
+		Pb[n + 1][s] = 0;
 
-    for (s = 0; s < NBSTATES; s++) {
-        double np;
-        int ns;
+	for (s = 0; s < NBSTATES; s++) {
+		double np;
+		int ns;
 
-        if (Pb[n][s] == 0.0)
-            continue;
+		if (Pb[n][s] == 0.0)
+			continue;
 
-        /* 1 */
-        np = Pb[n][s] * V;
-        ns = s ^ H[n];
-        if (np > Pb[n + 1][ns]) {
-            Pb[n + 1][ns] = np;
-            Bk[n + 1][ns] = s;
-            B[n + 1][ns] = 1;
-        }
-        /* 0 */
-        np = Pb[n][s] * (1.0 - V);
-        if (np > Pb[n + 1][s]) {
-            Pb[n + 1][s] = np;
-            Bk[n + 1][s] = s;
-            B[n + 1][s] = 0;
-        }
+		/* 1 */
+		np = Pb[n][s] * V;
+		ns = s ^ H[n];
+		if (np > Pb[n + 1][ns]) {
+			Pb[n + 1][ns] = np;
+			Bk[n + 1][ns] = s;
+			B[n + 1][ns] = 1;
+		}
+		/* 0 */
+		np = Pb[n][s] * (1.0 - V);
+		if (np > Pb[n + 1][s]) {
+			Pb[n + 1][s] = np;
+			Bk[n + 1][s] = s;
+			B[n + 1][s] = 0;
+		}
 
-    }
+	}
 
 }
 
 float viterbi_end(unsigned int *bits)
 {
-    int n;
-    int s;
-    int b;
+	int n;
+	int s;
+	int b;
 
-    s = 0;
-    *bits = 0;
-    b = 1;
-    for (n = NBITS; n > 0; n--) {
-        if (B[n][s])
-            *bits |= b;
-        s = Bk[n][s];
-        b <<= 1;
-    }
-    return Pb[NBITS][0];
+	s = 0;
+	*bits = 0;
+	b = 1;
+	for (n = NBITS; n > 0; n--) {
+		if (B[n][s])
+			*bits |= b;
+		s = Bk[n][s];
+		b <<= 1;
+	}
+	return Pb[NBITS][0];
 }
 
-/*
-main()
-{
-const float V[25]= {
-0,0.7,0.05,0.95, 0,0.7,0.95,0.95, 0.2,0.4,0.95,0.05, 0.95,0.05,0.95,0.95, 0.95,0.05,0,0.05,
-0.7,0.95,0.05,0,0.6};
-int k;
-int b;
-float p;
-
-viterbi_init();
-
-for(k=0;k<25;k++)
-	viterbi_add(V[k],k);
-
-p=viterbi_end(&b);
-fprintf(stderr,"%0x %f\n,",b,p);
-}
-*/
