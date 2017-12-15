@@ -18,11 +18,11 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
 
 ## Examples
 
-vdlm2 -r 0 136.725 136.775 136.975 
+./vdlm2dec -r 0 136.725 136.775 136.975 
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.
-It has been tested on x86_64 with fedora 25, and on tegra with Ubuntu 14.04.5 
+It has been tested on x86_64 with fedora 25, on tegra with Ubuntu 14.04.5 ,and un raspy
 
 It depends on some external libraries :
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
