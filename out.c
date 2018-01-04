@@ -57,7 +57,7 @@ static void outaddr(unsigned char *hdata)
 	addr = addr & 0xffffff;
 
 	if (type == 7)
-		fprintf(logfd, "All    ", addr);
+		fprintf(logfd, "All    ");
 	else
 		fprintf(logfd, "%06x ", addr);
 

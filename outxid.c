@@ -97,7 +97,7 @@ void outprivategr(unsigned char *p, int len)
 				p[i + 2] >> 4, p[i + 2] & 0x7);
 			break;
 		case 0x04:
-			fprintf(logfd, "Specific options: ", p[i + 2]);
+			fprintf(logfd, "Specific options: ");
 			if (p[i + 2] & 1)
 				fprintf(logfd, "GDA:");
 			else
