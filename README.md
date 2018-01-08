@@ -1,16 +1,16 @@
 # VDLM2DEC
-vdlm2dec is a vdl mode 2 decoder with built-in rtl_sdr front end.
+vdlm2dec is a vdl mode 2 decoder with built-in rtl_sdr or airspy front end.
 
 It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range )
 
 ## Usage
 > vdlm2dec  [-v|V] [-l logfile]  [-g gain] [-r rtldevicenumber]  Frequencies(Mhz)
 
- -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber
+ -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber (don't set it for airspy)
  
- -g gain :		set rtl preamp gain in tenth of db (ie -g 90 for +9db)
+ -g gain :		set preamp gain in tenth of db (ie -g 90 for +9db)
 
- -p ppm :		set rtl sdr ppm frequency 
+ -p ppm :		set rtl sdr ppm frequency (rtl_sdr only)
 
  -v :			verbose
  
@@ -28,8 +28,15 @@ It depends on some external libraries :
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libusb
 
-## Frequency correction
+> make -f  Makefile.rtl
+for rtl-sdr 
+
+> make -f Makefile.air
+for airspy
+
+## Frequency correction for rtl-sdr
  1) In verbose mode 2 , read the ppm displayed for each message.
  2) Guess an average, round to near integer
  3) set the -p option as the opposite of this number
+
 
