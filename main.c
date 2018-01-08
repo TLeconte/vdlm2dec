@@ -31,8 +31,8 @@
 #include "vdlm2.h"
 
 int verbose = 1;
-#ifdef WITH_RTL
 int gain = 1000;
+#ifdef WITH_RTL
 int ppm = 0;
 #endif
 
@@ -116,6 +116,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+#ifdef WITH_AIR
+	res=initAirspy(argv, optind, tparam);
+#endif
+
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
 		exit(res);
@@ -140,7 +144,12 @@ int main(int argc, char **argv)
 	initSndWrite();
 #endif
 
+#ifdef WITH_RTL
 	runRtlSample();
+#endif
+#ifdef WITH_AIR
+	runAirspySample();
+#endif
 
 	stopVdlm2();
 

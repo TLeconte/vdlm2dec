@@ -25,8 +25,6 @@
 #include "vdlm2.h"
 #include "d8psk.h"
 
-extern unsigned int Fc;
-
 static struct timespec ftime;
 static unsigned int ink;
 
@@ -343,8 +341,6 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 
 }
 
-extern pthread_barrier_t Bar1, Bar2;
-extern complex float Cbuff[RTLINBUFSZ / 2];
 void *rcv_thread(void *arg)
 {
 	thread_param_t *param = (thread_param_t *) arg;
@@ -355,7 +351,7 @@ void *rcv_thread(void *arg)
 
 	int clk = 0;
 	int nf = 0;
-	int no, swf;
+	int no;
 	float Fo;
 	complex float D = 0;
 	complex float wf[SDRINRATE / STEPRATE];
@@ -364,9 +360,8 @@ void *rcv_thread(void *arg)
 	initVdlm2(&ch);
 
 	/* pre compute local Osc */
-	swf = abs(SDRINRATE / ch.Fr);
 	Fo = (float)ch.Fr / (float)(SDRINRATE) * 2.0 * M_PI;
-	for (no = 0; no < swf; no++) {
+	for (no = 0; no < SDRINRATE / STEPRATE; no++) {
 		wf[no] = cexpf(-no * Fo * I);
 	}
 	no = 0;
@@ -382,7 +377,7 @@ void *rcv_thread(void *arg)
 			D += Cbuff[i] * wf[no];
 			nf++;
 
-			no = (no + 1) % swf;
+			no = (no + 1) % (SDRINRATE / STEPRATE);
 
 			/* rought downsample */
 			clk += 21;

@@ -22,10 +22,17 @@
 
 #define MAXNBCHANNELS 8
 
+#ifdef WITH_RTL
 #define SDRINRATE 2000000
 #define SDRCLK  500
 //#define SDRINRATE 2500000
 //#define SDRCLK  625
+#endif
+
+#ifdef WITH_AIR
+#define SDRINRATE 5000000
+#define SDRCLK  1250
+#endif
 
 #define STEPRATE 25000
 
@@ -74,9 +81,16 @@ typedef struct {
 
 } channel_t;
 
-#ifdef WITH_RTL
 extern int gain;
+extern unsigned int Fc;
+extern pthread_barrier_t Bar1, Bar2;
+
+#ifdef WITH_RTL
 extern int ppm;
+extern complex float Cbuff[RTLINBUFSZ / 2];
+#endif
+#ifdef WITH_AIR
+extern float Cbuff[RTLINBUFSZ / 2];
 #endif
 
 extern int verbose;
