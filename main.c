@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 			verbose = 0;
 			break;
 		case 'l':
-			logfd = fopen(optarg, "w+");
+			logfd = fopen(optarg, "a+");
 			if (logfd == NULL) {
 				fprintf(stderr, "unable top open %s\n", optarg);
 				exit(1);
