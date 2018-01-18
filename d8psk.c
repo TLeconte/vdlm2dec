@@ -298,7 +298,9 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 		if (ch->perr < 4.0 && err > ch->perr) {
 			float of;
 			double du;
-			clock_gettime(CLOCK_REALTIME, &(ch->blk->ts));
+
+			gettimeofday(&(ch->blk->tv), NULL);
+
 			ch->state = GETHEAD;
 			ch->nbits = 0;
 			ch->scrambler = 0x4D4B;

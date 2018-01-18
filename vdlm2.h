@@ -43,7 +43,7 @@
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	int chn;
-	struct timespec ts;
+	struct timeval tv;
 	float ppm;
 	int nbrow, nlbyte;
 	unsigned char data[65][255];

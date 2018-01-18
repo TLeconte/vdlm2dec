@@ -101,6 +101,18 @@ static void outlinkctrl(unsigned char lc, int rep)
 	}
 }
 
+static void printdate(struct timeval tv)
+{
+        struct tm tmp;
+
+        gmtime_r(&(tv.tv_sec), &tmp);
+
+        fprintf(logfd, "%02d/%02d/%04d %02d:%02d:%02d.%03d",
+                tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900,
+                tmp.tm_hour, tmp.tm_min, tmp.tm_sec,tv.tv_usec/1000);
+}
+
+
 void out(msgblk_t * blk, unsigned char *hdata, int l)
 {
 	int i, d;
@@ -110,7 +122,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	fprintf(logfd,
 		"-----------------------------------------------------------------------\n");
 	if(verbose >1) fprintf(logfd,"ppm %.1f\n",blk->ppm);
-	fprintf(logfd, "#%1d %s ", blk->chn + 1, rep ? "Response" : "Command");
+	fprintf(logfd, "#%1d ", blk->chn + 1);
+	printdate(blk->tv);
+	fprintf(logfd, "\n%s ", rep ? "Response" : "Command");
 	fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
 	outaddr(&(hdata[5]));
 	fprintf(logfd, "to: ");
