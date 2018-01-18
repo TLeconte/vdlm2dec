@@ -48,7 +48,7 @@ static void outaddr(unsigned char *hdata)
 {
 	unsigned int addr =
 	    (reversebits(hdata[0] >> 2, 6) << 21) |
-	    (reversebits(hdata[2] >> 1, 7) << 14) |
+	    (reversebits(hdata[1] >> 1, 7) << 14) |
 	    (reversebits(hdata[2] >> 1, 7) << 7) |
 	    (reversebits(hdata[3] >> 1, 7));
 
