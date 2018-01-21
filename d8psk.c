@@ -306,7 +306,7 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 			ch->scrambler = 0x4D4B;
 			viterbi_init();
 			ch->df = ch->pfr;
-			ch->blk->ppm = 10500*ch->df/(2.0*M_PI*(ch->Fr+Fc))*1e6;
+			ch->blk->ppm = 10500*ch->df/(2.0*M_PI*ch->Fr)*1e6;
 			of = 4 * (ch->p2err - 4 * ch->perr +
 				  3 * err) / (ch->p2err - 2 * ch->perr + err);
 			ch->clk = (int)roundf(of);
@@ -362,7 +362,7 @@ void *rcv_thread(void *arg)
 	initVdlm2(&ch);
 
 	/* pre compute local Osc */
-	Fo = (float)ch.Fr / (float)(SDRINRATE) * 2.0 * M_PI;
+	Fo = (float)param->Fo / (float)(SDRINRATE) * 2.0 * M_PI;
 	for (no = 0; no < SDRINRATE / STEPRATE; no++) {
 		wf[no] = cexpf(-no * Fo * I);
 	}

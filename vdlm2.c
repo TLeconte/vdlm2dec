@@ -168,6 +168,7 @@ int initVdlm2(channel_t * ch)
 	ch->state = WSYNC;
 	ch->blk = calloc(sizeof(msgblk_t), 1);
 	ch->blk->chn = ch->chn;
+	ch->blk->Fr = ch->Fr;
 
 	if (ch->chn == 0) {
 		pthread_mutex_init(&blkmtx, NULL);
@@ -200,6 +201,7 @@ void decodeVdlm2(channel_t * ch)
 
 	ch->blk = calloc(sizeof(msgblk_t), 1);
 	ch->blk->chn = ch->chn;
+	ch->blk->Fr = ch->Fr;
 
 	return;
 }

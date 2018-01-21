@@ -237,7 +237,7 @@ int initRtl(char **argv, int optind, thread_param_t * param)
 		return 1;
 
 	for (n = 0; n < nbch; n++) {
-		param[n].Fr -= Fc;
+		param[n].Fo -= Fc;
 	}
 
 	if (verbose)

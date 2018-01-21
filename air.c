@@ -115,7 +115,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	F0=Fc+SDRINRATE/4;
 
 	for (n = 0; n < nbch; n++) {
-                param[n].Fr = param[n].Fr-F0;
+                param[n].Fo = param[n].Fr-F0;
         }
 
 	result = airspy_init();

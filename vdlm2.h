@@ -43,6 +43,7 @@
 typedef struct mskblk_s {
 	struct mskblk_s *prev;
 	int chn;
+	int Fr;
 	struct timeval tv;
 	float ppm;
 	int nbrow, nlbyte;
@@ -51,7 +52,7 @@ typedef struct mskblk_s {
 
 typedef struct {
 	int chn;
-	int Fr;
+	int Fr,Fo;
 } thread_param_t;
 
 #define NBPH 17

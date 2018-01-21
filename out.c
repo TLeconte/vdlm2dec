@@ -119,12 +119,12 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	int rep = (hdata[5] & 2) >> 1;
 	int gnd = hdata[1] & 2;
 
-	fprintf(logfd,
-		"-----------------------------------------------------------------------\n");
-	if(verbose >1) fprintf(logfd,"ppm %.1f\n",blk->ppm);
-	fprintf(logfd, "#%1d ", blk->chn + 1);
-	printdate(blk->tv);
-	fprintf(logfd, "\n%s ", rep ? "Response" : "Command");
+        fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
+                        blk->Fr / 1000000.0, blk->ppm);
+        printdate(blk->tv);
+        fprintf(logfd, " --------------------------------\n");
+
+	fprintf(logfd, "%s ", rep ? "Response" : "Command");
 	fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
 	outaddr(&(hdata[5]));
 	fprintf(logfd, "to: ");
