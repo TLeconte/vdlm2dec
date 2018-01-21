@@ -127,7 +127,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	fprintf(logfd, "%s ", rep ? "Response" : "Command");
 	fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
 	outaddr(&(hdata[5]));
-	fprintf(logfd, "to: ");
+	fprintf(logfd, "to ");
 	outaddr(&(hdata[1]));
 	fprintf(logfd, "\n");
 

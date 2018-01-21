@@ -61,6 +61,16 @@ void outpublicgr(unsigned char *p, int len)
 	} while (i < len);
 }
 
+static unsigned int geticaoaddr(char *p)
+{
+ unsigned int addr =
+	    (reversebits(p[0] >> 2, 6) << 21) |
+	    (reversebits(p[1] >> 1, 7) << 14) |
+	    (reversebits(p[2] >> 1, 7) << 7) |
+	    (reversebits(p[3] >> 1, 7));
+ return addr;
+}
+
 void outprivategr(unsigned char *p, int len)
 {
 	int i;
@@ -131,14 +141,16 @@ void outprivategr(unsigned char *p, int len)
 			break;
 		case 0x82:{
 				unsigned int addr;
-				addr =
-				    (reversebits(p[i + 2] >> 2, 6) << 21) |
-				    (reversebits(p[i + 3] >> 1, 7) << 14) |
-				    (reversebits(p[i + 4] >> 1, 7) << 7) |
-				    (reversebits(p[i + 5] >> 1, 7));
-				fprintf(logfd,
-					"Acceptable alternative ground station %06x\n",
-					addr & 0xffffff);
+				int n=0;
+
+				fprintf(logfd, "Acceptable alternative ground stations : ");
+
+				while(n<p[i+1+n]) {
+				 addr = geticaoaddr(&(p[i+2+n]));
+				 fprintf(logfd,"%06X ", addr & 0xffffff);
+				 n+=4;
+				}
+				fprintf(logfd,"\n");
 				break;
 			}
 		case 0x83:{
@@ -152,17 +164,77 @@ void outprivategr(unsigned char *p, int len)
 		case 0x84:{
 				int alt;
 				short lat, lon;
-				lat =
-				    (((uint32_t) (p[i + 2]) << 8) |
-				     (p[i + 3] & 0xf0));
-				lon =
-				    (((uint32_t) (p[i + 3] & 0xf) << 12) |
-				     (uint32_t) (p[i + 4]) << 4);
+				lat = ((uint32_t) (p[i + 2]) << 4) | ((uint32_t) (p[i + 3] & 0xf0) >> 4) ;
+				lon = ((uint32_t) (p[i + 3] & 0x0f) << 8) | ((uint32_t) (p[i + 4])) ;
 				alt = p[i + 5] * 1000;
 				fprintf(logfd,
-					"Aircraft Position   %4.1f %5.1f alt:%d\n",
-					(float)lat / 160.0, (float)lon / 160.0,
+					"Aircraft Position %4.1f %5.1f alt:%d\n",
+					(float)lat / 10.0, (float)lon / 10.0,
 					alt);
+				break;
+			}
+		case 0xc0:{
+				unsigned int addr,mod,freq;
+				int n=0;
+
+				fprintf(logfd, "Frequency support : ");
+
+				while(n<p[i+1]) {
+				 mod = (uint32_t) (p[i+2+n]&0xf0) >> 4;
+				 freq = ((uint32_t) (p[i+2+n]&0x0f) << 8) | ((uint32_t) (p[i + 3])) ;
+				 addr = geticaoaddr(&(p[i+4+n]));
+				 fprintf(logfd,"%f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
+				 n+=6;
+				}
+				fprintf(logfd,"\n");
+				break;
+			}
+		case 0xc1:{
+				char id[5];
+				int n=0;
+
+				id[4]='\0';
+
+				fprintf(logfd, "Airport coverage : ");
+
+				while(n<p[i+1]) {
+				 memcpy(id,&(p[i+2+n]),4);
+				 fprintf(logfd,"%s ",id);
+				 n+=4;
+				}
+				fprintf(logfd,"\n");
+				break;
+			}
+		case 0xc3:{
+				char id[5];
+				id[4]='\0';
+
+				memcpy(id,&(p[i+2]),4);
+				fprintf(logfd, "Nearest Airport : %s\n",id);
+				break;
+			}
+		case 0xc4:{
+				unsigned int adm,ars;
+				
+				adm= ((uint32_t) (p[i + 2]) << 16) | ((uint32_t) (p[i + 3]) << 8) | ((uint32_t) (p[i + 4]));
+				ars= ((uint32_t) (p[i + 5]) << 16) | ((uint32_t) (p[i + 6]) << 8) | ((uint32_t) (p[i + 7]));
+				fprintf(logfd, "ATN router nets : ADM: %06X ARS : %06X\n",adm,ars);
+				break;
+			}
+		case 0xc5:{
+				unsigned int mask;
+				mask= geticaoaddr(&(p[i+2]));
+
+				fprintf(logfd, "Station system mask : %06X\n", mask & 0xffffff);
+				break;
+			}
+		case 0xc8:{
+				short lat, lon;
+				lat = ((uint32_t) (p[i + 2]) << 4) | ((uint32_t) (p[i + 3] & 0xf0) >> 4) ;
+				lon = ((uint32_t) (p[i + 3] & 0x0f) << 8) | ((uint32_t) (p[i + 4])) ;
+				fprintf(logfd,
+					"Station Position %4.1f %5.1f\n",
+					(float)lat / 10.0, (float)lon / 10.0);
 				break;
 			}
 		default:
