@@ -8,14 +8,15 @@ all:	vdlm2dec
 vdlm2dec:	main.o rtl.o d8psk.o vdlm2.o viterbi.o rs.o crc.o out.o outacars.o outxid.o
 	$(CC)  main.o rtl.o d8psk.o vdlm2.o viterbi.o rs.o crc.o out.o outacars.o outxid.o -o $@ $(LDLIBS)
 
-outacars.o:	outacars.c acars.h
-outxid.o:	outxid.c acars.h
-out.o:		out.c
+outacars.o:	outacars.c acars.h crc.h vdlm2.h
+outxid.o:	outxid.c acars.h vdlm2.h
+out.o:		out.c acars.h vdlm2.h
 main.o: main.c vdlm2.h
-rtl.o:	rtl.c vdlm2.h
 d8psk.o: d8psk.c d8psk.h vdlm2.h
-vdlm2.o: vdlm2.c vdlm2.h
+vdlm2.o: vdlm2.c vdlm2.h acars.h crc.h
 viterbi.o: viterbi.c vdlm2.h
+rtl.o: rtl.c vdlm2.h
+
 
 clean:
 	@rm -f *.o vdlm2dec
