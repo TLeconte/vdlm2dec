@@ -27,40 +27,6 @@
 
 extern int verbose;
 
-void outpublicgr(unsigned char *p, int len)
-{
-	int i;
-
-	i = 0;
-	do {
-		short len = p[i + 1];
-
-		switch (p[i]) {
-		case 0:
-			break;
-		case 0x01:
-			fprintf(logfd, "Parameter set ID\n");
-			break;
-		case 0x02:
-			fprintf(logfd, "Procedure classes\n");
-			break;
-		case 0x03:
-			fprintf(logfd, "HDLC options\n");
-			break;
-		case 0x09:
-			fprintf(logfd, "Timer T1 downlink\n");
-			break;
-		default:
-			fprintf(logfd, "unknown public id %02x\n", p[i]);
-			if (verbose > 1) {
-				dumpdata(&(p[i]), len + 2);
-			}
-			break;
-		}
-		i += 2 + len;
-	} while (i < len);
-}
-
 static unsigned int geticaoaddr(char *p)
 {
  unsigned int addr =
@@ -69,6 +35,17 @@ static unsigned int geticaoaddr(char *p)
 	    (reversebits(p[2] >> 1, 7) << 7) |
 	    (reversebits(p[3] >> 1, 7));
  return addr;
+}
+
+static void getlatlon(char *p,  float *lat, float *lon)
+{
+short slat,slon;
+
+slat=(((short)p[0])<<8) | (unsigned short)(p[1] & 0xf0);
+slon=(((short)(p[1] & 0x0f))<< 12) | ((unsigned short)(p[2]) <<4);
+
+*lat=(float)slat/160.0; 
+*lon=(float)slon/160.0; 
 }
 
 void outprivategr(unsigned char *p, int len)
@@ -85,15 +62,15 @@ void outprivategr(unsigned char *p, int len)
 		case 0x01:
 			fprintf(logfd, "Connection management: ");
 			if (p[i + 2] & 1)
-				fprintf(logfd, "HO  ");
+				fprintf(logfd, "HO|");
 			else if (p[i + 2] & 2)
-				fprintf(logfd, "LCR ");
+				fprintf(logfd, "LCR|");
 			else
-				fprintf(logfd, "LE  ");
+				fprintf(logfd, "LE|");
 			if (p[i + 2] & 4)
-				fprintf(logfd, "GDA:");
+				fprintf(logfd, "GDA|");
 			else
-				fprintf(logfd, "VDA:");
+				fprintf(logfd, "VDA|");
 			if (p[i + 2] & 8)
 				fprintf(logfd, "ESS\n");
 			else
@@ -145,7 +122,7 @@ void outprivategr(unsigned char *p, int len)
 
 				fprintf(logfd, "Acceptable alternative ground stations : ");
 
-				while(n<p[i+1+n]) {
+				while(n<p[i+1]) {
 				 addr = geticaoaddr(&(p[i+2+n]));
 				 fprintf(logfd,"%06X ", addr & 0xffffff);
 				 n+=4;
@@ -163,14 +140,16 @@ void outprivategr(unsigned char *p, int len)
 			}
 		case 0x84:{
 				int alt;
-				short lat, lon;
-				lat = ((uint32_t) (p[i + 2]) << 4) | ((uint32_t) (p[i + 3] & 0xf0) >> 4) ;
-				lon = ((uint32_t) (p[i + 3] & 0x0f) << 8) | ((uint32_t) (p[i + 4])) ;
+				float lat, lon;
+
+				getlatlon(&(p[i + 2]),&lat,&lon);
 				alt = p[i + 5] * 1000;
-				fprintf(logfd,
-					"Aircraft Position %4.1f %5.1f alt:%d\n",
-					(float)lat / 10.0, (float)lon / 10.0,
-					alt);
+				fprintf(logfd, "Aircraft Position %4.1f %5.1f ", lat, lon );
+				if(alt==0)
+					fprintf(logfd, "alt: <=999\n");
+				else if(alt==255000)
+					fprintf(logfd, "alt: >=255000\n");
+					else fprintf(logfd, "alt: %d\n",alt);
 				break;
 			}
 		case 0xc0:{
@@ -229,12 +208,10 @@ void outprivategr(unsigned char *p, int len)
 				break;
 			}
 		case 0xc8:{
-				short lat, lon;
-				lat = ((uint32_t) (p[i + 2]) << 4) | ((uint32_t) (p[i + 3] & 0xf0) >> 4) ;
-				lon = ((uint32_t) (p[i + 3] & 0x0f) << 8) | ((uint32_t) (p[i + 4])) ;
-				fprintf(logfd,
-					"Station Position %4.1f %5.1f\n",
-					(float)lat / 10.0, (float)lon / 10.0);
+				float lat, lon;
+
+				getlatlon(&(p[i + 2]),&lat,&lon);
+				fprintf(logfd, "Station Position %4.1f %5.1f\n", lat, lon) ;
 				break;
 			}
 		default:
@@ -258,7 +235,7 @@ void outxid(unsigned char *p, int len)
 		short glen = p[i + 1] * 256 + p[i + 2];
 
 		if (p[i] == 0x80) {
-			outpublicgr(&(p[i + 3]), glen);
+			// don't mess with public parameters
 			i += 3 + glen;
 			continue;
 		}

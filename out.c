@@ -83,19 +83,16 @@ static void outlinkctrl(unsigned char lc, int rep)
 	if (lc & 1) {
 		if (lc & 2) {
 			fprintf(logfd, "U: ");
-			fprintf(logfd, "%s ", (lc & 0x10) ? "P/F" : "-/-");
 			fprintf(logfd, "%s\n",
 				Ufrm[rep][((lc >> 3) & 0x1c) |
 					  ((lc >> 2) & 0x3)]);
 		} else {
 			fprintf(logfd, "S: ");
-			fprintf(logfd, "%s ", (lc & 0x10) ? "P/F" : "-/-");
 			fprintf(logfd, "Nr:%01d %s\n", (lc >> 5) & 0x7,
 				Sfrm[(lc >> 2) & 0x3]);
 		}
 	} else {
 		fprintf(logfd, "I: ");
-		fprintf(logfd, "%s ", (lc & 0x10) ? "P/F" : "-/-");
 		fprintf(logfd, "Ns:%01d Nr:%01d\n", (lc >> 1) & 0x7,
 			(lc >> 5) & 0x7);
 	}
