@@ -162,7 +162,7 @@ void outprivategr(unsigned char *p, int len)
 				 mod = (uint32_t) (p[i+2+n]&0xf0) >> 4;
 				 freq = ((uint32_t) (p[i+2+n]&0x0f) << 8) | ((uint32_t) (p[i + 3])) ;
 				 addr = geticaoaddr(&(p[i+4+n]));
-				 fprintf(logfd,"%f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
+				 fprintf(logfd,"%03.2f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
 				 n+=6;
 				}
 				fprintf(logfd,"\n");
