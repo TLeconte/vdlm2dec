@@ -18,7 +18,7 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
 
  -j :			json output
 
- -n addr:port		send to addr:port UDP pakets in json that could be read by acarsserv
+ -n addr:port		send to addr:port UDP packets in json that could be read by acarsserv
 
  
 ## Examples
