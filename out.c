@@ -21,8 +21,88 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/socket.h>
+#include <time.h>
+#include <netdb.h>
+
 #include "vdlm2.h"
 #include "acars.h"
+
+char *jsonbuf=NULL;
+#define JSONBUFLEN 512
+
+int sockfd=-1;
+
+extern void outxid(unsigned char *p, int len);
+
+int initOutput(char *Rawaddr)
+{
+	char *addr;
+	char *port;
+	struct addrinfo hints, *servinfo, *p;
+	int rv;
+
+		memset(&hints, 0, sizeof hints);
+		if (Rawaddr[0] == '[') {
+			hints.ai_family = AF_INET6;
+			addr = Rawaddr + 1;
+			port = strstr(addr, "]");
+			if (port == NULL) {
+				fprintf(stderr, "Invalid IPV6 address\n");
+				return -1;
+			}
+			*port = 0;
+			port++;
+			if (*port != ':')
+				port = "5555";
+			else
+				port++;
+		} else {
+			hints.ai_family = AF_UNSPEC;
+			addr = Rawaddr;
+			port = strstr(addr, ":");
+			if (port == NULL)
+				port = "5555";
+			else {
+				*port = 0;
+				port++;
+			}
+		}
+
+		hints.ai_socktype = SOCK_DGRAM;
+
+		if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
+			fprintf(stderr, "Invalid/unknown address %s\n", addr);
+			return -1;
+		}
+
+		for (p = servinfo; p != NULL; p = p->ai_next) {
+			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+			continue;
+			}
+
+			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+				close(sockfd);
+				continue;
+			}
+			break;
+		}
+		if (p == NULL) {
+			fprintf(stderr, "failed to connect\n");
+			return -1;
+		}
+
+		freeaddrinfo(servinfo);
+	
+	return 0;
+}
+
+void initJson(void)
+{
+	jsonbuf=malloc(JSONBUFLEN);
+}
 
 void dumpdata(unsigned char *p, int len)
 {
@@ -106,51 +186,54 @@ static void printdate(struct timeval tv)
 
         fprintf(logfd, "%02d/%02d/%04d %02d:%02d:%02d.%03d",
                 tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900,
-                tmp.tm_hour, tmp.tm_min, tmp.tm_sec,tv.tv_usec/1000);
+                tmp.tm_hour, tmp.tm_min, tmp.tm_sec,(int)tv.tv_usec/1000);
 }
 
 
 void out(msgblk_t * blk, unsigned char *hdata, int l)
 {
-	int i, d;
+	int d;
 	int rep = (hdata[5] & 2) >> 1;
 	int gnd = hdata[1] & 2;
 
-        fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
+	if(verbose) {
+        	fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
                         blk->Fr / 1000000.0, blk->ppm);
-        printdate(blk->tv);
-        fprintf(logfd, " --------------------------------\n");
+        	printdate(blk->tv);
+        	fprintf(logfd, " --------------------------------\n");
 
-	fprintf(logfd, "%s ", rep ? "Response" : "Command");
-	fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
-	outaddr(&(hdata[5]));
-	fprintf(logfd, "to ");
-	outaddr(&(hdata[1]));
-	fprintf(logfd, "\n");
+		fprintf(logfd, "%s ", rep ? "Response" : "Command");
+		fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
+		outaddr(&(hdata[5]));
+		fprintf(logfd, "to ");
+		outaddr(&(hdata[1]));
+		fprintf(logfd, "\n");
 
-	outlinkctrl(hdata[9], rep);
+		outlinkctrl(hdata[9], rep);
+	}
 
-        if(verbose >0) {
-		d = 0;
+	d = 0;
+	if (l == 13) {
+		d = 1;
+	}
 
-		if (l == 13) {
-			d = 1;
-		}
+	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
+		outacars(blk,&(hdata[13]), l - 16);
+		d = 1;
+	}
 
-		if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-			outacars(&(hdata[13]), l - 16);
-			d = 1;
-		}
+	if(verbose) {
 		if (l >= 14 && hdata[10] == 0x82) {
 			outxid(&(hdata[11]), l - 14);
 			d = 1;
 		}
 
-		if (d == 0) {
+		if (d == 0 && verbose > 1 ) {
 			fprintf(logfd, "unknown data\n");
-			if(verbose > 1) dumpdata(&(hdata[10]), l - 13);
+			dumpdata(&(hdata[10]), l - 13);
 		}
-        }
-	fflush(logfd);
+
+		fflush(logfd);
+	}
 
 }

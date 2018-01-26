@@ -265,7 +265,7 @@ int initRtl(char **argv, int optind, thread_param_t * param)
 }
 
 complex float Cbuff[RTLINBUFSZ / 2];
-void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
+static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 {
 	int i;
 

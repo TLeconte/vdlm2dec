@@ -31,6 +31,11 @@
 #include "vdlm2.h"
 
 int verbose = 1;
+int jsonout = 0;
+char *Rawaddr = NULL;
+char *idstation = NULL ;
+FILE *logfd;
+
 int gain = 1000;
 #ifdef WITH_RTL
 int ppm = 0;
@@ -38,16 +43,13 @@ int ppm = 0;
 
 int nbch;
 thread_param_t tparam[MAXNBCHANNELS];
-
 pthread_barrier_t Bar1, Bar2;
-
-FILE *logfd;
 
 static void usage(void)
 {
 	fprintf(stderr,
 		"vdlm2dec V2.0 Copyright (c) 2016-2017 Thierry Leconte \n\n");
-	fprintf(stderr, "Usage: vdlm2dec  [-v|V] [-l logfile] ");
+	fprintf(stderr, "Usage: vdlm2dec  [-l logfile] ");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
 #endif
@@ -59,8 +61,9 @@ static void usage(void)
 		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
-	fprintf(stderr, " -v n:\t\t\tverbose  0 : header only , 1 : normal, 2 : data dump\n");
+	fprintf(stderr, " -j :\t\t\tjson output\n");
 	fprintf(stderr, " -q :\t\t\tquiet\n");
+	fprintf(stderr, " -n addr:port :\t\t\tsend to addr:port UDP pakets in json\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
 	exit(1);
 }
@@ -73,21 +76,21 @@ static void sighandler(int signum)
 
 int main(int argc, char **argv)
 {
-	int c;
-	int res, n;
+	int n,c;
+	int res=0;
 	struct sigaction sigact;
-	char *fname;
-	int rdev;
-	double freq;
+        char sys_hostname[8];
+
+        gethostname(sys_hostname, sizeof(sys_hostname));
+        idstation = strndup(sys_hostname, 8);
 
 	nbch = 0;
 	logfd = stderr;
 
-	while ((c = getopt(argc, argv, "v:qrp:g:l:")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:jn:i")) != EOF) {
 		switch (c) {
 		case 'v':
-			verbose = atoi(optarg);
-			if(verbose>3) verbose=3;
+			verbose = 2;
 			break;
 		case 'q':
 			verbose = 0;
@@ -110,11 +113,28 @@ int main(int argc, char **argv)
 			ppm = atoi(optarg);
 			break;
 #endif
+		case 'n':
+			Rawaddr = optarg;
+			initOutput(Rawaddr);
+			break;
+		case 'j':
+			jsonout = 1;
+			break;
+		case 'i':
+			idstation = strndup(optarg, 8);
+			break;
+
 		default:
 			usage();
 			return (1);
 		}
 	}
+
+	if(jsonout) 
+		verbose=0;
+
+	if(jsonout || Rawaddr) 
+		initJson();
 
 #ifdef WITH_AIR
 	res=initAirspy(argv, optind, tparam);
@@ -122,7 +142,7 @@ int main(int argc, char **argv)
 
 	if (res) {
 		fprintf(stderr, "Unable to init input\n");
-		exit(res);
+		exit(-1);
 	}
 
 	sigact.sa_handler = sighandler;

@@ -82,6 +82,8 @@ typedef struct {
 
 } channel_t;
 
+#define JSONBUFLEN 512
+
 extern int gain;
 extern unsigned int Fc;
 extern pthread_barrier_t Bar1, Bar2;
@@ -101,8 +103,10 @@ extern FILE *logfd;
 extern int initRtl(char **argv, int optind, thread_param_t * param);
 extern int runRtlSample(void);
 #endif
-
-extern void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx);
+#ifdef WITH_AIR
+extern int initAirspy(char **argv, int optind, thread_param_t * param);
+extern int runAirspySample(void);
+#endif
 
 extern int initFile(char *file);
 extern int runFileSample(void);
@@ -127,4 +131,6 @@ extern unsigned int reversebits(const unsigned int bits, const int n);
 extern unsigned short pppfcs16(unsigned char *cp, int len);
 extern int rs(unsigned char *data, int *eras_pos, int no_eras);
 
+extern int initOutput(char *Rawaddr);
+extern void initJson(void);
 extern void out(msgblk_t * blk, unsigned char *hdata, int l);

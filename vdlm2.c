@@ -36,7 +36,7 @@ static msgblk_t *blkq_e = NULL;
 
 static void check_frame(msgblk_t * blk, unsigned char *hdata, int l)
 {
-	int i, d;
+	int i;
 	unsigned short crc;
 
 	if (l < 13) {
@@ -61,7 +61,7 @@ static void check_frame(msgblk_t * blk, unsigned char *hdata, int l)
 
 static int set_eras(int *eras_pos, int nb)
 {
-	int i, nbera = 0;
+	int nbera = 0;
 
 	if (nb <= 67) {
 		nbera = 2;

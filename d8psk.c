@@ -25,9 +25,6 @@
 #include "vdlm2.h"
 #include "d8psk.h"
 
-static struct timespec ftime;
-static unsigned int ink;
-
 int initD8psk(channel_t * ch)
 {
 	ch->ink = 0;
@@ -234,10 +231,7 @@ static inline float filteredphase(channel_t * ch)
 
 static inline void demodD8psk(channel_t * ch, const complex float E)
 {
-	int i, k;
-	complex float S;
 	float P;
-	float d[4];
 
 	ch->Inbuff[ch->ink] = E;
 	ch->ink = (ch->ink + 1) % MBUFLEN;
@@ -248,8 +242,8 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 
 		float fr, M;
 		float Pr[NBPH], Pu, Pv;
+		float err;
 		int l;
-		float p, err;
 
 		if (ch->clk < 8)
 			return;
@@ -297,7 +291,6 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 		//fprintf(stderr,"err %f %f\n",ch->perr,fr);
 		if (ch->perr < 4.0 && err > ch->perr) {
 			float of;
-			double du;
 
 			gettimeofday(&(ch->blk->tv), NULL);
 
@@ -319,8 +312,7 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 			ch->pfr = fr;
 		}
 	} else {
-		int v;
-		float D, err;
+		float D;
 
 		if (ch->clk < 32)
 			return;
@@ -338,9 +330,6 @@ static inline void demodD8psk(channel_t * ch, const complex float E)
 
 		ch->P1 = P;
 	}
-
-	//SndWrite(d);
-
 }
 
 void *rcv_thread(void *arg)

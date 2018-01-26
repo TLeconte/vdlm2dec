@@ -26,13 +26,24 @@
 #include "vdlm2.h"
 #include "crc.h"
 #include "acars.h"
+#include "cJSON.h"
 
 extern int verbose;
+extern char *idstation;
+
+extern int jsonout;
+extern char* jsonbuf;
+
+extern int sockfd;
+
+extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
 static void printmsg(acarsmsg_t * msg)
 {
+	fprintf(logfd, "ACARS\n");
+
 	if (msg->mode < 0x5d) {
-		fprintf(logfd, "Aircraft reg: %s ", msg->reg);
+		fprintf(logfd, "Aircraft reg: %s ", msg->addr);
 		fprintf(logfd, "Flight id: %s", msg->fid);
 		fprintf(logfd, "\n");
 	}
@@ -47,13 +58,84 @@ static void printmsg(acarsmsg_t * msg)
 
 }
 
-void outacars(unsigned char *txt, int len)
+static void outjson()
+{
+	char pkt[500];
+
+	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
+	write(sockfd, pkt, strlen(pkt));
+}
+
+static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
+{
+
+	oooi_t oooi;
+	cJSON *json_obj;
+	int ok = 0;
+	char convert_tmp[8];
+
+	json_obj = cJSON_CreateObject();
+	if (json_obj == NULL)
+		return ok;
+
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddNumberToObject(json_obj, "channel", chn);
+	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
+	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
+	cJSON_AddStringToObject(json_obj, "label", msg->label);
+
+	if(msg->bid) {
+		snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->bid);
+		cJSON_AddStringToObject(json_obj, "block_id", convert_tmp);
+
+		if(msg->ack == 0x15) {
+			cJSON_AddFalseToObject(json_obj, "ack");
+		} else {
+			snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->ack);
+			cJSON_AddStringToObject(json_obj, "ack", convert_tmp);
+		}
+
+		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
+		if(msg->mode <= 'Z') {
+			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
+			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
+		}
+	}
+	if(msg->txt[0])
+		cJSON_AddStringToObject(json_obj, "text", msg->txt);
+
+	if (msg->be == 0x17)
+		cJSON_AddTrueToObject(json_obj, "end");
+
+	if(DecodeLabel(msg, &oooi)) {
+		if(oooi.sa[0])
+			cJSON_AddStringToObject(json_obj, "depa", oooi.sa);
+		if(oooi.da[0])
+			cJSON_AddStringToObject(json_obj, "dsta", oooi.da);
+		if(oooi.eta[0])
+			cJSON_AddStringToObject(json_obj, "eta", oooi.eta);
+		if(oooi.gout[0])
+			cJSON_AddStringToObject(json_obj, "gtout", oooi.gout);
+		if(oooi.gin[0])
+			cJSON_AddStringToObject(json_obj, "gtin", oooi.gin);
+		if(oooi.woff[0])
+			cJSON_AddStringToObject(json_obj, "wloff", oooi.woff);
+		if(oooi.won[0])
+			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
+	}
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+	cJSON_Delete(json_obj);
+	return ok;
+}
+
+
+void outacars(msgblk_t * blk,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	int i, k, j;
 	unsigned int crc;
-
-	fprintf(logfd, "ACARS\n");
 
 	crc = 0;
 	/* test crc, set le and remove parity */
@@ -73,11 +155,11 @@ void outacars(unsigned char *txt, int len)
 
 	for (i = 0, j = 0; i < 7; i++, k++) {
 		if (txt[k] != '.') {
-			msg.reg[j] = txt[k];
+			msg.addr[j] = txt[k];
 			j++;
 		}
 	}
-	msg.reg[j] = '\0';
+	msg.addr[j] = '\0';
 
 	/* ACK/NAK */
 	msg.ack = txt[k];
@@ -130,6 +212,17 @@ void outacars(unsigned char *txt, int len)
 
 	if (verbose) {
 		printmsg(&msg);
+	}
+
+	// build the JSON buffer if needed
+	if(jsonbuf)
+		buildjson(&msg, blk->chn, blk->tv);
+
+	if(jsonout)
+		fprintf(logfd, "%s\n", jsonbuf);
+
+	if (sockfd > 0) {
+		outjson();
 	}
 
 }

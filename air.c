@@ -76,7 +76,7 @@ static unsigned int chooseFc(unsigned int *Fd, const unsigned int nbch)
 
 int initAirspy(char **argv, int optind, thread_param_t * param)
 {
-	int r, n;
+	int n;
 	char *argF;
 	unsigned int F0;
 	unsigned int Fd[MAXNBCHANNELS];

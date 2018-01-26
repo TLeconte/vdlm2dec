@@ -22,12 +22,15 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#include "acars.h"
 #include "vdlm2.h"
+#include "acars.h"
 
 extern int verbose;
 
-static unsigned int geticaoaddr(char *p)
+extern void dumpdata(unsigned char *p, int len);
+
+
+static unsigned int geticaoaddr(unsigned char *p)
 {
  unsigned int addr =
 	    (reversebits(p[0] >> 2, 6) << 21) |
@@ -37,7 +40,7 @@ static unsigned int geticaoaddr(char *p)
  return addr;
 }
 
-static void getlatlon(char *p,  float *lat, float *lon)
+static void getlatlon(unsigned char *p,  float *lat, float *lon)
 {
 short slat,slon;
 

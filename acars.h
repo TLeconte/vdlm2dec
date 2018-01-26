@@ -18,7 +18,7 @@
  */
 typedef struct {
 	char mode;
-	char reg[8];
+	char addr[8];
 	char ack;
 	char label[3];
 	char bid;
@@ -38,4 +38,4 @@ typedef struct {
 	char won[5];
 } oooi_t;
 
-extern void outacars(unsigned char *txt, int len);
+extern void outacars(msgblk_t * blk,unsigned char *txt, int len);
