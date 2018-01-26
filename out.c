@@ -202,10 +202,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
         	printdate(blk->tv);
         	fprintf(logfd, " --------------------------------\n");
 
-		fprintf(logfd, "%s ", rep ? "Response" : "Command");
-		fprintf(logfd, "from %s: ", gnd ? "Ground" : "Aircraft");
+		fprintf(logfd, "%s from : ", rep ? "Response" : "Command");
 		outaddr(&(hdata[5]));
-		fprintf(logfd, "to ");
+		fprintf(logfd, "(%s) to : ", gnd ? "on ground" : "airborne");
 		outaddr(&(hdata[1]));
 		fprintf(logfd, "\n");
 
