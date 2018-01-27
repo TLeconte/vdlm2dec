@@ -79,4 +79,13 @@ acarsserv is a companion program for vdlm2dec. It listens to acars messages on U
 
 See : [acarsserv](https://github.com/TLeconte/acarsserv)
 
+## Copyrights 
+vdlm2dec and acarsserv are Copyright Thierry Leconte 2015-2018
+
+These code are free software; you can redistribute it and/or modify
+it under the terms of the GNU Library General Public License version 2
+published by the Free Software Foundation.
+
+They include [cJSON](https://github.com/DaveGamble/cJSON) Copyright (c) 2009-2017 Dave Gamble a
+nd cJSON contributors
 
