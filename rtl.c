@@ -29,6 +29,7 @@
 
 extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
+extern int gain;
 
 unsigned int Fc;
 

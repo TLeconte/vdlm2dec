@@ -36,9 +36,12 @@ char *Rawaddr = NULL;
 char *idstation = NULL ;
 FILE *logfd;
 
-int gain = 1000;
 #ifdef WITH_RTL
+int gain = 1000;
 int ppm = 0;
+#endif
+#ifdef WITH_AIR
+int gain = 20;
 #endif
 
 int nbch;
@@ -48,7 +51,7 @@ pthread_barrier_t Bar1, Bar2;
 static void usage(void)
 {
 	fprintf(stderr,
-		"vdlm2dec V2.0 Copyright (c) 2016-2017 Thierry Leconte \n\n");
+		"vdlm2dec V2.0 Copyright (c) 2016-2018 Thierry Leconte \n\n");
 	fprintf(stderr, "Usage: vdlm2dec  [-l logfile] ");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
@@ -106,11 +109,13 @@ int main(int argc, char **argv)
 		case 'r':
 			res = initRtl(argv, optind, tparam);
 			break;
-		case 'g':
-			gain = atoi(optarg);
-			break;
 		case 'p':
 			ppm = atoi(optarg);
+			break;
+#endif
+#ifdef WITH_AIR
+		case 'g':
+			gain = atoi(optarg);
 			break;
 #endif
 		case 'n':

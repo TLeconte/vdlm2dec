@@ -84,7 +84,6 @@ typedef struct {
 
 #define JSONBUFLEN 512
 
-extern int gain;
 extern unsigned int Fc;
 extern pthread_barrier_t Bar1, Bar2;
 

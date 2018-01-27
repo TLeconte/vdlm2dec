@@ -30,6 +30,8 @@
 
 extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
+extern int gain;
+
 unsigned int Fc;
 
 static struct airspy_device* device = NULL;
@@ -159,20 +161,10 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return -1;
 	}
 
-	result = airspy_set_vga_gain(device, gain);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_vga_gain() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
-
-	result = airspy_set_mixer_agc(device, 1);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_mixer_agc() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
-
-	result = airspy_set_lna_agc(device, 1);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_lna_agc() failed: %s (%d)\n", airspy_error_name(result), result);
-	}
+        result = airspy_set_linearity_gain(device, gain);
+        if( result != AIRSPY_SUCCESS ) {
+                fprintf(stderr,"airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
+        }
 
 	if (verbose)
 		fprintf(stderr, "Set freq. to %d hz\n", Fc);
