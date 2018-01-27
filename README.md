@@ -73,4 +73,10 @@ for airspy
  2) Guess an average, round to near integer
  3) set the -p option as the opposite of this number (ex : -p 4 )
 
+# Acarsserv
+
+acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
+
+See : [acarsserv](https://github.com/TLeconte/acarsserv)
+
 
