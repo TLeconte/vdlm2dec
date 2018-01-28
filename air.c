@@ -161,6 +161,11 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return -1;
 	}
 
+        result = airspy_set_packing(device, 1);
+        if( result != AIRSPY_SUCCESS ) {
+                fprintf(stderr,"airspy_set_packing true failed: %s (%d)\n", airspy_error_name(result), result);
+        }
+
         result = airspy_set_linearity_gain(device, gain);
         if( result != AIRSPY_SUCCESS ) {
                 fprintf(stderr,"airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
