@@ -136,10 +136,31 @@ static void outaddr(unsigned char *hdata)
 
 	addr = addr & 0xffffff;
 
-	if (type == 7)
-		fprintf(logfd, "All    ");
-	else
-		fprintf(logfd, "%06X ", addr);
+	switch(type) {
+		case 0:
+			fprintf(logfd, "T%1d:%06X ", type,addr);
+			break;
+		case 1:
+			fprintf(logfd, "Aircraft:%06X ", addr);
+			break;
+		case 2:
+		case 3:
+			fprintf(logfd, "T%1d:%06X ", type,addr);
+			break;
+		case 4:
+			fprintf(logfd, "GroundA:%06X ", addr);
+			break;
+		case 5:
+			fprintf(logfd, "GroundD:%06X ", addr);
+			break;
+		case 6:
+			fprintf(logfd, "T%1d:%06X ", type,addr);
+			break;
+		case 7:
+			fprintf(logfd, "All ");
+			break;
+
+	}
 
 }
 
@@ -202,9 +223,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
         	printdate(blk->tv);
         	fprintf(logfd, " --------------------------------\n");
 
-		fprintf(logfd, "%s from : ", rep ? "Response" : "Command");
+		fprintf(logfd, "%s from ", rep ? "Response" : "Command");
 		outaddr(&(hdata[5]));
-		fprintf(logfd, "(%s) to : ", gnd ? "on ground" : "airborne");
+		fprintf(logfd, "(%s) to ", gnd ? "on ground" : "airborne");
 		outaddr(&(hdata[1]));
 		fprintf(logfd, "\n");
 
