@@ -16,9 +16,9 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
  
  -l logfile :		output log (stderr by default)
 
- -j :			json output
+ -J :			json output
 
- -n addr:port		send to addr:port UDP packets in json that could be read by acarsserv
+ -j addr:port		send to addr:port UDP packets in json that could be read by acarsserv
 
  
 ## Examples
@@ -78,6 +78,8 @@ for airspy
 acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
 
 See : [acarsserv](https://github.com/TLeconte/acarsserv)
+
+Note : vdlm2dec could only send packet over the network on json format. It does not support the acarsdec old binary format.
 
 ## Copyrights 
 vdlm2dec and acarsserv are Copyright Thierry Leconte 2015-2018

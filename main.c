@@ -64,9 +64,9 @@ static void usage(void)
 		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
-	fprintf(stderr, " -j :\t\t\tjson output\n");
+	fprintf(stderr, " -J :\t\t\tjson output\n");
 	fprintf(stderr, " -q :\t\t\tquiet\n");
-	fprintf(stderr, " -n addr:port :\t\t\tsend to addr:port UDP pakets in json\n");
+	fprintf(stderr, " -j addr:port :\t\t\tsend to addr:port UDP pakets in json\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
 	exit(1);
 }
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stderr;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:jn:i")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:i")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -118,11 +118,11 @@ int main(int argc, char **argv)
 			gain = atoi(optarg);
 			break;
 #endif
-		case 'n':
+		case 'j':
 			Rawaddr = optarg;
 			initOutput(Rawaddr);
 			break;
-		case 'j':
+		case 'J':
 			jsonout = 1;
 			break;
 		case 'i':
