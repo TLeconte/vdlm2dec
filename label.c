@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "acarsdec.h"
-
-
+#include "vdlm2.h"
+#include "acars.h"
 
 static int label_q1(char *txt,oooi_t *oooi)
 {
