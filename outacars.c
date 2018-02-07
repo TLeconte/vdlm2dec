@@ -33,8 +33,8 @@ extern char *idstation;
 
 extern int jsonout;
 extern char* jsonbuf;
-
 extern int sockfd;
+extern  void outjson(void);
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
@@ -58,15 +58,7 @@ static void printmsg(acarsmsg_t * msg)
 
 }
 
-static void outjson()
-{
-	char pkt[500];
-
-	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-	write(sockfd, pkt, strlen(pkt));
-}
-
-static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
+static int buildjson(unsigned int vaddr,acarsmsg_t * msg, int chn, struct timeval tv)
 {
 
 	oooi_t oooi;
@@ -81,6 +73,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
+	cJSON_AddNumberToObject(json_obj, "icao", vaddr & 0xffffff);
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
 	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
 	cJSON_AddStringToObject(json_obj, "label", msg->label);
@@ -131,7 +124,7 @@ static int buildjson(acarsmsg_t * msg, int chn, struct timeval tv)
 }
 
 
-void outacars(msgblk_t * blk,unsigned char *txt, int len)
+void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	int i, k, j;
@@ -216,7 +209,7 @@ void outacars(msgblk_t * blk,unsigned char *txt, int len)
 
 	// build the JSON buffer if needed
 	if(jsonbuf)
-		buildjson(&msg, blk->chn, blk->tv);
+		buildjson(vaddr, &msg, blk->chn, blk->tv);
 
 	if(jsonout)
 		fprintf(logfd, "%s\n", jsonbuf);

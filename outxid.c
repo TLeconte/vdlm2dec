@@ -24,11 +24,17 @@
 #include <time.h>
 #include "vdlm2.h"
 #include "acars.h"
+#include "cJSON.h"
 
 extern int verbose;
+extern char *idstation;
+
+extern int jsonout;
+extern char* jsonbuf;
+extern int sockfd;
+extern  void outjson(void);
 
 extern void dumpdata(unsigned char *p, int len);
-
 
 static unsigned int geticaoaddr(unsigned char *p)
 {
@@ -134,11 +140,10 @@ void outprivategr(unsigned char *p, int len)
 				break;
 			}
 		case 0x83:{
-				oooi_t oooi;
-				memset(&oooi, 0, sizeof(oooi));
-				memcpy(oooi.da, &(p[i + 2]), 4);
-				fprintf(logfd, "Destination airport %s\n",
-					oooi.da);
+				char da[5];
+				da[4]='\0';
+				memcpy(da,&(p[i+2]),4);
+				fprintf(logfd, "Destination airport %s\n", &(p[i + 2]));
 				break;
 			}
 		case 0x84:{
@@ -229,7 +234,45 @@ void outprivategr(unsigned char *p, int len)
 	} while (i < len);
 }
 
-void outxid(unsigned char *p, int len)
+static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, struct timeval tv)
+{
+	int i;
+	char da[5];
+	int ok = 0;
+	cJSON *json_obj;
+
+	i = 0;
+	do {
+		short len = p[i + 1];
+
+		if (p[i] == 0x83) {
+			da[4]='\0';
+			memcpy(da,&(p[i+2]),4);
+			break;
+		}
+		i += 2 + len;
+	} while (i < len);
+	if(i>=len) return 0;
+
+	json_obj = cJSON_CreateObject();
+	if (json_obj == NULL)
+		return 0;
+
+	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddNumberToObject(json_obj, "channel", chn);
+        cJSON_AddNumberToObject(json_obj, "icao", vaddr & 0xffffff);
+
+	cJSON_AddStringToObject(json_obj, "dsta", da);
+
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
+
+	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+	cJSON_Delete(json_obj);
+	return ok;
+}
+
+void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 {
 	int i;
 
@@ -243,9 +286,21 @@ void outxid(unsigned char *p, int len)
 			continue;
 		}
 		if (p[i] == 0xf0) {
-			outprivategr(&(p[i + 3]), glen);
+			if(verbose)
+				outprivategr(&(p[i + 3]), glen);
+
+			// build the JSON buffer if needed
+			if(jsonbuf)
+				buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->tv);
+
+			if(jsonout)
+				fprintf(logfd, "%s\n", jsonbuf);
+
+			if (sockfd > 0) 
+				outjson();
+
 			i += 3 + glen;
-			continue;
+			break;
 		}
 		if (verbose > 1) {
 			fprintf(logfd, "unknown group %02x\n", p[i]);
@@ -254,3 +309,5 @@ void outxid(unsigned char *p, int len)
 		i += 3 + glen;
 	} while (i < len);
 }
+
+

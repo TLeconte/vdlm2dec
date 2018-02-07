@@ -35,7 +35,8 @@ char *jsonbuf=NULL;
 
 int sockfd=-1;
 
-extern void outxid(unsigned char *p, int len);
+extern void outxid(unsigned int vaddr,msgblk_t * blk,unsigned char *p, int len);
+extern void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len);
 
 int initOutput(char *Rawaddr)
 {
@@ -104,6 +105,16 @@ void initJson(void)
 	jsonbuf=malloc(JSONBUFLEN);
 }
 
+void outjson()
+{
+        char pkt[500];
+
+	if(jsonbuf==NULL || sockfd<0) return;
+
+        snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
+        write(sockfd, pkt, strlen(pkt));
+}
+
 void dumpdata(unsigned char *p, int len)
 {
 	int i, k;
@@ -124,14 +135,19 @@ void dumpdata(unsigned char *p, int len)
 	}
 }
 
-static void outaddr(unsigned char *hdata)
+static unsigned int vdlm2addr(unsigned char *hdata)
 {
-	unsigned int addr =
-	    (reversebits(hdata[0] >> 2, 6) << 21) |
-	    (reversebits(hdata[1] >> 1, 7) << 14) |
-	    (reversebits(hdata[2] >> 1, 7) << 7) |
-	    (reversebits(hdata[3] >> 1, 7));
+    unsigned int addr =
+    (reversebits(hdata[0] >> 2, 6) << 21) |
+    (reversebits(hdata[1] >> 1, 7) << 14) |
+    (reversebits(hdata[2] >> 1, 7) << 7) |
+    (reversebits(hdata[3] >> 1, 7));
 
+    return addr;
+}
+
+static void outaddr(unsigned int addr)
+{
 	unsigned int type = addr >> 24;
 
 	addr = addr & 0xffffff;
@@ -216,6 +232,10 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	int d;
 	int rep = (hdata[5] & 2) >> 1;
 	int gnd = hdata[1] & 2;
+	unsigned int faddr,taddr;
+
+	faddr=vdlm2addr(&(hdata[5]));
+	taddr=vdlm2addr(&(hdata[1]));
 
 	if(verbose) {
         	fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
@@ -224,9 +244,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
         	fprintf(logfd, " --------------------------------\n");
 
 		fprintf(logfd, "%s from ", rep ? "Response" : "Command");
-		outaddr(&(hdata[5]));
+		outaddr(faddr);
 		fprintf(logfd, "(%s) to ", gnd ? "on ground" : "airborne");
-		outaddr(&(hdata[1]));
+		outaddr(taddr);
 		fprintf(logfd, "\n");
 
 		outlinkctrl(hdata[9], rep);
@@ -238,22 +258,22 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	}
 
 	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(blk,&(hdata[13]), l - 16);
+		outacars(faddr,blk,&(hdata[13]), l - 16);
 		d = 1;
 	}
 
-	if(verbose) {
-		if (l >= 14 && hdata[10] == 0x82) {
-			outxid(&(hdata[11]), l - 14);
-			d = 1;
-		}
-
-		if (d == 0 && verbose > 1 ) {
-			fprintf(logfd, "unknown data\n");
-			dumpdata(&(hdata[10]), l - 13);
-		}
-
-		fflush(logfd);
+	if (l >= 14 && hdata[10] == 0x82) {
+		outxid(faddr,blk,&(hdata[11]), l - 14);
+		d = 1;
 	}
+
+	if (d == 0) {
+		if(verbose) 
+			fprintf(logfd, "unknown data\n");
+		if(verbose>1) 
+			dumpdata(&(hdata[10]), l - 13);
+	}
+
+	fflush(logfd);
 
 }

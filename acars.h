@@ -37,5 +37,3 @@ typedef struct {
 	char woff[5];
 	char won[5];
 } oooi_t;
-
-extern void outacars(msgblk_t * blk,unsigned char *txt, int len);
