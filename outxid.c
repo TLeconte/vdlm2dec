@@ -143,7 +143,7 @@ void outprivategr(unsigned char *p, int len)
 				char da[5];
 				da[4]='\0';
 				memcpy(da,&(p[i+2]),4);
-				fprintf(logfd, "Destination airport %s\n", &(p[i + 2]));
+				fprintf(logfd, "Destination airport %s\n", da);
 				break;
 			}
 		case 0x84:{
