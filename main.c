@@ -52,21 +52,25 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"vdlm2dec V2.0 Copyright (c) 2016-2018 Thierry Leconte \n\n");
-	fprintf(stderr, "Usage: vdlm2dec  [-l logfile] ");
+	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
-	fprintf(stderr, " [-g gain] [-r rtldevicenumber] ");
+	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
 #endif
 	fprintf(stderr, " Frequencies(Mhz)\n");
 #ifdef WITH_RTL
 	fprintf(stderr,
-		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber \n");
+		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber.(MANDATORY parameter)\n");
 	fprintf(stderr,
-		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
+		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).By default use maximum gain\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
+#endif
+#ifdef WITH_AIR
+	fprintf(stderr,
+		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
 #endif
 	fprintf(stderr, " -J :\t\t\tjson output\n");
 	fprintf(stderr, " -q :\t\t\tquiet\n");
-	fprintf(stderr, " -j addr:port :\t\t\tsend to addr:port UDP pakets in json\n");
+	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
 	exit(1);
 }
@@ -111,6 +115,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			ppm = atoi(optarg);
+			break;
+		case 'g':
+			gain = atoi(optarg);
 			break;
 #endif
 #ifdef WITH_AIR
