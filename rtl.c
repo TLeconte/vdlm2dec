@@ -279,9 +279,9 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 
 	for (i = 0; i < RTLINBUFSZ;) {
 		float r, g;
-		r = (float)rtlinbuff[i] - (float)127.64;
+		r = (float)rtlinbuff[i] - (float)127.37;
 		i++;
-		g = (float)rtlinbuff[i] - (float)127.64;
+		g = (float)rtlinbuff[i] - (float)127.37;
 		i++;
 		Cbuff[i / 2] = r + g * I;
 	}
