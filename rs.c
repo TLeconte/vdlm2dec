@@ -68,15 +68,10 @@ static const unsigned char index_of[] = {
 	46, 75, 185, 96, 15, 237, 62, 229, 246, 135, 165, 23, 58, 163, 60, 183,
 };
 
-static const unsigned char poly[] = {
-	225, 156, 176, 244, 186, 176, 0,
-};
-
 #define MM 8
 #define NN 255
 #define ALPHA_TO alpha_to
 #define INDEX_OF index_of
-#define GENPOLY poly
 #define NROOTS 6
 #define FCR 120
 #define PRIM 1
