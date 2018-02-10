@@ -234,25 +234,37 @@ void outprivategr(unsigned char *p, int len)
 	} while (i < len);
 }
 
-static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, struct timeval tv)
+static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, int freqb, struct timeval tv)
 {
 	int i;
 	char da[5];
+	int alt, pos=0;
+	float lat, lon;
 	int ok = 0;
 	cJSON *json_obj;
+	char convert_tmp[8];
+#if defined (WITH_RTL) || defined (WITH_AIR)
+        float freq = freqb / 1000000.0;
+#else
+        float freq = 0;
+#endif
 
 	i = 0;
+	da[0]=da[4]='\0';
 	do {
 		short len = p[i + 1];
 
 		if (p[i] == 0x83) {
-			da[4]='\0';
 			memcpy(da,&(p[i+2]),4);
-			break;
+		}
+		if (p[i] == 0x84) {
+			getlatlon(&(p[i + 2]),&lat,&lon);
+			alt = p[i + 5] * 1000;
+			pos=1;
 		}
 		i += 2 + len;
 	} while (i < len);
-	if(i>=len) return 0;
+	if(da[0]=='\0' && pos==0) return 0;
 
 	json_obj = cJSON_CreateObject();
 	if (json_obj == NULL)
@@ -260,12 +272,21 @@ static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, s
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+	cJSON_AddStringToObject(json_obj, "station_id", idstation);
+
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
+        snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
+        cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
+
         cJSON_AddNumberToObject(json_obj, "icao", vaddr & 0xffffff);
 
-	cJSON_AddStringToObject(json_obj, "dsta", da);
+	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
 
-	cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	if(pos) {
+		cJSON_AddNumberToObject(json_obj, "lat", lat);
+		cJSON_AddNumberToObject(json_obj, "lon", lon);
+		cJSON_AddNumberToObject(json_obj, "alt", alt);
+	}
 
 	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
 	cJSON_Delete(json_obj);
@@ -291,7 +312,7 @@ void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 
 			// build the JSON buffer if needed
 			if(jsonbuf)
-				buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->tv);
+				buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
 
 			if(jsonout)
 				fprintf(logfd, "%s\n", jsonbuf);
