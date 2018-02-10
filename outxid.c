@@ -232,6 +232,8 @@ void outprivategr(unsigned char *p, int len)
 		}
 		i += 2 + len;
 	} while (i < len);
+
+	fflush(logfd);
 }
 
 static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, int freqb, struct timeval tv)
@@ -314,8 +316,10 @@ void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 			if(jsonbuf)
 				buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
 
-			if(jsonout)
+			if(jsonout) {
 				fprintf(logfd, "%s\n", jsonbuf);
+				fflush(logfd);
+			}
 
 			if (sockfd > 0) 
 				outjson();
@@ -326,6 +330,7 @@ void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 		if (verbose > 1) {
 			fprintf(logfd, "unknown group %02x\n", p[i]);
 			dumpdata(&(p[i]), glen + 3);
+			fflush(logfd);
 		}
 		i += 3 + glen;
 	} while (i < len);

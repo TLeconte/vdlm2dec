@@ -71,7 +71,7 @@ static void usage(void)
 	fprintf(stderr, " -J :\t\t\tjson output\n");
 	fprintf(stderr, " -q :\t\t\tquiet\n");
 	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
-	fprintf(stderr, " -l logfile :\t\toutput log (stderr by default)\n");
+	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n");
 	exit(1);
 }
 
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
         idstation = strndup(sys_hostname, 8);
 
 	nbch = 0;
-	logfd = stderr;
+	logfd = stdout;
 
 	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:i")) != EOF) {
 		switch (c) {

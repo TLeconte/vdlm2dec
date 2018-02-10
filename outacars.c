@@ -56,6 +56,7 @@ static void printmsg(acarsmsg_t * msg)
 	if (msg->be == 0x17)
 		fprintf(logfd, "Block End\n");
 
+	fflush(logfd);
 }
 
 static int buildjson(unsigned int vaddr,acarsmsg_t * msg, int chn, int freqb, struct timeval tv)
@@ -221,8 +222,10 @@ void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
 	if(jsonbuf)
 		buildjson(vaddr, &msg, blk->chn, blk->Fr, blk->tv);
 
-	if(jsonout)
+	if(jsonout) {
 		fprintf(logfd, "%s\n", jsonbuf);
+		fflush(logfd);
+	}
 
 	if (sockfd > 0) {
 		outjson();
