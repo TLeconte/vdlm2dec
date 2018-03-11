@@ -23,34 +23,52 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
  
 ## Examples
 
-> ./vdlm2dec -r 0 136.725 136.775 136.975 
+> ./vdlm2dec -r 0 136.725 136.775 136.875 136.975 
 
-    [#3 (F:136.975 P:-4.9) 26/01/2018 21:37:08.327 --------------------------------
-    Response from Aircraft: 440030 to 1098CA 
-    Frame-S: Nr:5 SREJ
-
-    [#3 (F:136.975 P:-4.0) 26/01/2018 21:37:08.575 --------------------------------
-    Command from Aircraft: 400D8D to 1098AA 
-    Frame-U: XID
-    Connection management: HO|VDA|ESN
-    XID sequencing 0:0
-    Specific options: GDA:ESN:IHS:BHN:BCN
-    Destination airport EGMC
-    Aircraft Position 45.8  -0.3 alt: 38000
-
-    [#3 (F:136.975 P:-7.2) 26/01/2018 21:39:31.155 --------------------------------
-    Command from Aircraft: 440575 to 213C97 
-    Frame-I: Ns:3 Nr:7
+    [#4 (F:136.975 P:-2.1) 11/03/2018 15:52:27.259 --------------------------------
+    Command from Aircraft:3986E5 (airborne) to GroundD:2198B7 
+    Frame-I: Ns:0 Nr:0
     ACARS
-    Aircraft reg: OE-IAP Flight id: 3V0015
-    Mode: 2 Msg. label: 85
+    Aircraft reg: F-HBXF Flight id: YS7656
+    Mode: 2 Msg. label: Q0
     Block id: 1 Ack: !
-    Msg. no: M29A
+    Msg. no: M36A
+    
+    [#4 (F:136.975 P:-6.3) 11/03/2018 15:52:27.831 --------------------------------
+    Command from Aircraft:3946EC (airborne) to GroundD:2190F7 
+    Frame-I: Ns:1 Nr:0
+    unknown data
+    
+    [#1 (F:136.725 P:-3.5) 11/03/2018 15:52:28.240 --------------------------------
+    Response from Aircraft:406321 (airborne) to GroundD:1191EA 
+    Frame-S: Nr:4 RR
+    
+    [#3 (F:136.875 P:-5.8) 11/03/2018 15:52:29.009 --------------------------------
+    Command from Aircraft:398517 (airborne) to GroundD:27CB21 
+    Frame-I: Ns:5 Nr:6
+    unknown data
+    
+    [#4 (F:136.975 P:-5.0) 11/03/2018 15:52:29.006 --------------------------------
+    Command from Aircraft:440176 (airborne) to GroundD:1098CA 
+    Frame-I: Ns:5 Nr:6
+    ACARS
+    Aircraft reg: OE-IJF Flight id: U287HY
+    Mode: 2 Msg. label: H2
+    Block id: 5 Ack: !
+    Msg. no: M60A
     Message :
-    3C01 POSWX0015/180126/LEZL/EBLG/OE-IAP
-    /POS46.36917/0.1911/OVR2139
-    /ALT33592/FOB0019/MCH770.000000/SAT        
+    02A111552LFRSLPPRN47097W001372111532  85P112     131P107205018G     185P097209026G     239P087215031G     292P072214037G     339P065220041G     378P052221044G     406P042226047G     427P035222046G     448P03022
+    Block End
+    
+    [#2 (F:136.775 P:-6.6) 11/03/2018 15:52:29.357 --------------------------------
+    Command from Aircraft:461FA1 (airborne) to GroundD:280645 
+    Frame-I: Ns:4 Nr:7
+    unknown data
 
+    [#1 (F:136.725 P:-2.5) 11/03/2018 15:52:29.359 --------------------------------
+    Command from Aircraft:440630 (airborne) to GroundD:11989A 
+    Frame-I: Ns:1 Nr:4
+    unknown data
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.
