@@ -38,7 +38,7 @@ extern  void outjson(void);
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
-static void printmsg(acarsmsg_t * msg)
+static void printmsg(const acarsmsg_t * msg)
 {
 	fprintf(logfd, "ACARS\n");
 
@@ -52,7 +52,7 @@ static void printmsg(acarsmsg_t * msg)
 	fprintf(logfd, "Block id: %c ", msg->bid);
 	fprintf(logfd, "Ack: %c\n", msg->ack);
 	fprintf(logfd, "Msg. no: %s\n", msg->no);
-	fprintf(logfd, "Message :\n%s\n", msg->txt);
+	if(msg->txt[0]) fprintf(logfd, "Message :\n%s\n", msg->txt);
 	if (msg->be == 0x17)
 		fprintf(logfd, "Block End\n");
 
@@ -140,6 +140,7 @@ void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
 	acarsmsg_t msg;
 	int i, k, j;
 	unsigned int crc;
+	int jok=0;
 
 	crc = 0;
 	/* test crc, set le and remove parity */
@@ -220,14 +221,14 @@ void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
 
 	// build the JSON buffer if needed
 	if(jsonbuf)
-		buildjson(vaddr, &msg, blk->chn, blk->Fr, blk->tv);
+		jok=buildjson(vaddr, &msg, blk->chn, blk->Fr, blk->tv);
 
-	if(jsonout) {
+	if(jsonout && jok) {
 		fprintf(logfd, "%s\n", jsonbuf);
 		fflush(logfd);
 	}
 
-	if (sockfd > 0) {
+	if ((sockfd > 0) && jok) {
 		outjson();
 	}
 

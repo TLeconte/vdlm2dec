@@ -298,6 +298,7 @@ static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, i
 void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 {
 	int i;
+	int jok=0;
 
 	i = 0;
 	do {
@@ -314,14 +315,14 @@ void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 
 			// build the JSON buffer if needed
 			if(jsonbuf)
-				buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
+				jok=buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
 
-			if(jsonout) {
+			if(jsonout && jok) {
 				fprintf(logfd, "%s\n", jsonbuf);
 				fflush(logfd);
 			}
 
-			if (sockfd > 0) 
+			if (sockfd > 0 && jok ) 
 				outjson();
 
 			i += 3 + glen;

@@ -31,7 +31,6 @@
 #include "acars.h"
 
 char *jsonbuf=NULL;
-#define JSONBUFLEN 512
 
 int sockfd=-1;
 
