@@ -36,43 +36,29 @@ unsigned int Fc;
 
 static struct airspy_device* device = NULL;
 
-static unsigned int chooseFc(unsigned int *Fd, const unsigned int nbch)
+static const unsigned int r820t_hf[]={1953050,1980748,2001344,2032592,2060291,2087988};
+static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,1502073,1715133,1853622};
+
+static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
 {
-        int n;
-        int ne;
-        int Fc;
-        do {
-                ne = 0;
-                for (n = 0; n < nbch - 1; n++) {
-                        if (Fd[n] > Fd[n + 1]) {
-                                unsigned int t;
-                                t = Fd[n + 1];
-                                Fd[n + 1] = Fd[n];
-                                Fd[n] = t;
-                                ne = 1;
-                        }
-                }
-        } while (ne);
+        unsigned int bw=maxF-minF+2*STEPRATE;
+        unsigned int off;
+        int i,j;
 
-        if ((Fd[nbch - 1] - Fd[0]) > SDRINRATE - 4 * STEPRATE) {
-                fprintf(stderr, "Frequencies too far apart\n");
-                return 0;
-        }
+        for(i=7;i>=0;i--)
+                if((r820t_hf[5]-r820t_lf[i])>=bw) break;
+        if(i<0) return 0;
 
-        for (Fc = Fd[nbch - 1] + 2 * STEPRATE; Fc > Fd[0] - 2 * STEPRATE; Fc--) {
-                for (n = 0; n < nbch; n++) {
-                        if (abs(Fc - Fd[n]) > SDRINRATE / 2 - 2 * STEPRATE)
-                                break;
-                        if (abs(Fc - Fd[n]) < 2 * STEPRATE)
-                                break;
-                        if (n > 0 && Fc - Fd[n - 1] == Fd[n] - Fc)
-                                break;
-                }
-                if (n == nbch)
-                        break;
-        }
+        for(j=5;j>=0;j--)
+                if((r820t_hf[j]-r820t_lf[i])<=bw) break;
+        j++;
 
-        return Fc;
+        off=(r820t_hf[j]+r820t_lf[i])/2-SDRINRATE/4;
+
+        airspy_r820t_write(device, 10, 0xB0 | (15-j));
+        airspy_r820t_write(device, 11, 0xE0 | (15-i));
+
+        return((maxF+minF)/2+off);
 }
 
 
@@ -80,13 +66,14 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 {
 	int n;
 	char *argF;
-	unsigned int F0;
+	unsigned int F0,minFc=140000000,maxFc=0;
 	unsigned int Fd[MAXNBCHANNELS];
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;
 
 
+	/* parse args */
 	nbch = 0;
 	while ((argF = argv[optind]) && nbch < MAXNBCHANNELS) {
                 Fd[nbch] = (int)(1000000 * atof(argF));
@@ -98,34 +85,20 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		}
 		param[nbch].chn = nbch;
 		param[nbch].Fr = Fd[nbch];
+                if(Fd[nbch]<minFc) minFc= Fd[nbch];
+                if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
 		nbch++;
 	};
 	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, taking only the first %d\n",
 			MAXNBCHANNELS);
-
 	if (nbch == 0) {
 		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
 	}
 
-	Fc = chooseFc(Fd, nbch);
-        if (Fc == 0)
-                return 1;
-
-	F0=Fc+SDRINRATE/4;
-
-	for (n = 0; n < nbch; n++) {
-                param[n].Fo = param[n].Fr-F0;
-        }
-
-	result = airspy_init();
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_init() failed: %s (%d)\n", airspy_error_name(result), result);
-		return -1;
-	}
-
+	/* init airspy */
 	result = airspy_open(&device);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
@@ -171,8 +144,13 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
                 fprintf(stderr,"airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
         }
 
-	if (verbose)
-		fprintf(stderr, "Set freq. to %d hz\n", Fc);
+	Fc = chooseFc(minFc, maxFc);
+        if (Fc == 0) {
+		fprintf(stderr,"Frequencies too far apart\n");
+		airspy_close(device);
+		airspy_exit();
+                return 1;
+	}
 
 	result = airspy_set_freq(device, Fc);
 	if( result != AIRSPY_SUCCESS ) {
@@ -181,7 +159,14 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		airspy_exit();
 		return -1;
 	}
+	if (verbose)
+		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
+	/* compute mixers osc. */
+	F0=Fc+SDRINRATE/4;
+	for (n = 0; n < nbch; n++) {
+                param[n].Fo = param[n].Fr-F0;
+        }
 
 	return 0;
 }

@@ -22,8 +22,11 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
 
  
 ## Examples
-
+For rtl-sdr :
 > ./vdlm2dec -r 0 136.725 136.775 136.875 136.975 
+
+For airspy :
+> ./vdlm2dec 136.725 136.775 136.875 136.975 
 
     [#4 (F:136.975 P:-2.1) 11/03/2018 15:52:27.259 --------------------------------
     Command from Aircraft:3986E5 (airborne) to GroundD:2198B7 
@@ -75,14 +78,18 @@ vdlm2dec must compile directly on any modern Linux distrib.
 It has been tested on x86_64 with fedora 27, on tegra with Ubuntu 14.04.5 
 
 It depends on some external libraries :
- * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libusb
+ * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
+ * libairspy for airspy (https://github.com/airspy/airspyone_host)
 
-> make -f  Makefile.rtl
+### Make
 for rtl-sdr 
 
-> make -f Makefile.air
+> make -f  Makefile.rtl
+
 for airspy
+
+> make -f Makefile.air
 
 ## Frequency correction for rtl-sdr
  1) when receiving a message ex :

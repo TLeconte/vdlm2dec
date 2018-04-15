@@ -41,7 +41,7 @@ int gain = 1000;
 int ppm = 0;
 #endif
 #ifdef WITH_AIR
-int gain = 20;
+int gain = 21;
 #endif
 
 int nbch;
