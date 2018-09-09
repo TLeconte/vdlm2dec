@@ -59,7 +59,7 @@ static void printmsg(const acarsmsg_t * msg)
 	fflush(logfd);
 }
 
-static int buildjson(unsigned int vaddr,acarsmsg_t * msg, int chn, int freqb, struct timeval tv)
+static int buildjson(unsigned int faddr,unsigned int taddr,acarsmsg_t * msg, int chn, int freqb, struct timeval tv)
 {
 
 	oooi_t oooi;
@@ -78,16 +78,21 @@ static int buildjson(unsigned int vaddr,acarsmsg_t * msg, int chn, int freqb, st
 
 	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
 	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+
 	cJSON_AddStringToObject(json_obj, "station_id", idstation);
 
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
+
         snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
         cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
 
-	cJSON_AddNumberToObject(json_obj, "icao", vaddr & 0xffffff);
-	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
+	cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
 
+	cJSON_AddNumberToObject(json_obj, "grndst", taddr & 0xffffff);
+
+	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
 	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
+
 	cJSON_AddStringToObject(json_obj, "label", msg->label);
 
 	if(msg->bid) {
@@ -135,7 +140,7 @@ static int buildjson(unsigned int vaddr,acarsmsg_t * msg, int chn, int freqb, st
 }
 
 
-void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
+void outacars(unsigned int vaddr,unsigned int taddr,msgblk_t * blk,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	int i, k, j;
@@ -221,7 +226,7 @@ void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len)
 
 	// build the JSON buffer if needed
 	if(jsonbuf)
-		jok=buildjson(vaddr, &msg, blk->chn, blk->Fr, blk->tv);
+		jok=buildjson(vaddr, taddr, &msg, blk->chn, blk->Fr, blk->tv);
 
 	if(jsonout && jok) {
 		fprintf(logfd, "%s\n", jsonbuf);

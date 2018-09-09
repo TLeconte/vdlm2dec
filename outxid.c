@@ -236,7 +236,7 @@ void outprivategr(unsigned char *p, int len)
 	fflush(logfd);
 }
 
-static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, int freqb, struct timeval tv)
+static int buildxidjson(unsigned int faddr,unsigned int taddr,unsigned char *p, int len, int chn, int freqb, struct timeval tv)
 {
 	int i;
 	char da[5];
@@ -277,10 +277,13 @@ static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, i
 	cJSON_AddStringToObject(json_obj, "station_id", idstation);
 
 	cJSON_AddNumberToObject(json_obj, "channel", chn);
+
         snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
         cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
 
-        cJSON_AddNumberToObject(json_obj, "icao", vaddr & 0xffffff);
+        cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
+
+        cJSON_AddNumberToObject(json_obj, "grndst", taddr & 0xffffff);
 
 	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
 
@@ -295,7 +298,7 @@ static int buildxidjson(unsigned int vaddr,unsigned char *p, int len, int chn, i
 	return ok;
 }
 
-void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
+void outxid(unsigned int faddr, unsigned int taddr, msgblk_t * blk,unsigned char *p, int len)
 {
 	int i;
 	int jok=0;
@@ -315,7 +318,7 @@ void outxid(unsigned int vaddr, msgblk_t * blk,unsigned char *p, int len)
 
 			// build the JSON buffer if needed
 			if(jsonbuf)
-				jok=buildxidjson(vaddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
+				jok=buildxidjson(faddr,taddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
 
 			if(jsonout && jok) {
 				fprintf(logfd, "%s\n", jsonbuf);

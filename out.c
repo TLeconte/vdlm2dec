@@ -34,8 +34,8 @@ char *jsonbuf=NULL;
 
 int sockfd=-1;
 
-extern void outxid(unsigned int vaddr,msgblk_t * blk,unsigned char *p, int len);
-extern void outacars(unsigned int vaddr,msgblk_t * blk,unsigned char *txt, int len);
+extern int outxid(unsigned int faddr,unsigned int taddr,msgblk_t * blk,unsigned char *p, int len);
+extern int outacars(unsigned int faddr,unsigned int taddr,msgblk_t * blk,unsigned char *txt, int len);
 
 int initOutput(char *Rawaddr)
 {
@@ -257,17 +257,15 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	}
 
 	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(faddr,blk,&(hdata[13]), l - 16);
-		d = 1;
+		outacars(faddr,taddr,blk,&(hdata[13]), l - 16);
 	}
 
 	if (l >= 14 && hdata[10] == 0x82) {
-		outxid(faddr,blk,&(hdata[11]), l - 14);
-		d = 1;
+		outxid(faddr,taddr,blk,&(hdata[11]), l - 14);
 	}
 
 	if (d == 0) {
-		if(verbose) 
+		if(verbose && l>13) 
 			fprintf(logfd, "unknown data\n");
 		if(verbose>1) 
 			dumpdata(&(hdata[10]), l - 13);

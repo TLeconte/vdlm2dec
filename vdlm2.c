@@ -138,10 +138,7 @@ static void *blk_thread(void *arg)
 							} else if (k == 1) {
 								hdata[1] = 0;
 							} else if (k > 1) {
-								check_frame(blk,
-									    hdata,
-									    k +
-									    1);
+								check_frame(blk, hdata, k + 1);
 								k++;
 								hdata[k] = 0;
 							}
