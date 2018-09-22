@@ -4,21 +4,33 @@ vdlm2dec is a vdl mode 2 decoder with built-in rtl_sdr or airspy front end.
 It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range )
 
 ## Usage
-> vdlm2dec  [-l logfile]  [-g gain] [-r rtldevicenumber]  Frequencies(Mhz)
+> vdlm2dec  [-l logfile]  [-g gain] [-i stid] [-v] [-q] [-J] [-l logfile] [-r rtldevicenumber]  Frequencies(Mhz)
 
  -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber (don't set it for airspy)
  
- -g gain :		set preamp gain in tenth of db (ie -g 90 for +9db)
+ -g gain :		set preamp gain in tenth of db (ie -g 90 for +9db) (rtl-sdr)
 
- -p ppm :		set rtl sdr ppm frequency (rtl_sdr only)
+ -g gain :		set linearity gain (0 to 21).By default use maximum gain (airspy)
 
- -q :			quiet
- 
+ -p ppm :		set rtl sdr ppm frequency (rtl-sdr only)
+
+ -i stid :		local receiver station id
+
+ -v :			verbose output
+
+ -q :			quiet output
+
+ -J :			json logfile output
+
  -l logfile :		output log (stderr by default)
 
- -J :			json output
-
  -j addr:port		send to addr:port UDP packets in json that could be read by acarsserv
+
+ -G :			output messages from ground station
+
+ -E :			output empty messages
+
+ -U :			output undecoded messages
 
  
 ## Examples
@@ -75,7 +87,7 @@ For airspy :
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.
-It has been tested on x86_64 with fedora 27, on tegra with Ubuntu 14.04.5 
+It has been tested on x86_64 with fedora 27, on tegra TK1,TX1 with Ubuntu  
 
 It depends on some external libraries :
  * libusb
@@ -100,7 +112,7 @@ for airspy
 
 # Acarsserv
 
-acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more acarsdec processes and stores them in a sqlite database.
+acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more vdlm2dec processes and stores them in a sqlite database.
 
 See : [acarsserv](https://github.com/TLeconte/acarsserv)
 

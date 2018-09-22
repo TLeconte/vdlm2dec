@@ -27,12 +27,7 @@
 #include "cJSON.h"
 
 extern int verbose;
-extern char *idstation;
-
-extern int jsonout;
-extern char* jsonbuf;
-extern int sockfd;
-extern  void outjson(void);
+extern cJSON *json_obj;
 
 extern void dumpdata(unsigned char *p, int len);
 
@@ -236,20 +231,12 @@ void outprivategr(unsigned char *p, int len)
 	fflush(logfd);
 }
 
-static int buildxidjson(unsigned int faddr,unsigned int taddr,unsigned char *p, int len, int chn, int freqb, struct timeval tv)
+static void buildxidjson(unsigned char *p, int len)
 {
 	int i;
 	char da[5];
-	int alt, pos=0;
-	float lat, lon;
-	int ok = 0;
-	cJSON *json_obj;
-	char convert_tmp[8];
-#if defined (WITH_RTL) || defined (WITH_AIR)
-        float freq = freqb / 1000000.0;
-#else
-        float freq = 0;
-#endif
+	int alt=0, pos=0;
+	float lat=0, lon=0;
 
 	i = 0;
 	da[0]=da[4]='\0';
@@ -266,24 +253,6 @@ static int buildxidjson(unsigned int faddr,unsigned int taddr,unsigned char *p, 
 		}
 		i += 2 + len;
 	} while (i < len);
-	if(da[0]=='\0' && pos==0) return 0;
-
-	json_obj = cJSON_CreateObject();
-	if (json_obj == NULL)
-		return 0;
-
-	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
-	cJSON_AddNumberToObject(json_obj, "timestamp", t);
-	cJSON_AddStringToObject(json_obj, "station_id", idstation);
-
-	cJSON_AddNumberToObject(json_obj, "channel", chn);
-
-        snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
-        cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
-
-        cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
-
-        cJSON_AddNumberToObject(json_obj, "grndst", taddr & 0xffffff);
 
 	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
 
@@ -292,16 +261,11 @@ static int buildxidjson(unsigned int faddr,unsigned int taddr,unsigned char *p, 
 		cJSON_AddNumberToObject(json_obj, "lon", lon);
 		cJSON_AddNumberToObject(json_obj, "alt", alt);
 	}
-
-	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
-	cJSON_Delete(json_obj);
-	return ok;
 }
 
-void outxid(unsigned int faddr, unsigned int taddr, msgblk_t * blk,unsigned char *p, int len)
+void outxid(unsigned char *p, int len)
 {
 	int i;
-	int jok=0;
 
 	i = 0;
 	do {
@@ -316,17 +280,8 @@ void outxid(unsigned int faddr, unsigned int taddr, msgblk_t * blk,unsigned char
 			if(verbose)
 				outprivategr(&(p[i + 3]), glen);
 
-			// build the JSON buffer if needed
-			if(jsonbuf)
-				jok=buildxidjson(faddr,taddr,&(p[i + 3]), glen, blk->chn, blk->Fr,blk->tv);
-
-			if(jsonout && jok) {
-				fprintf(logfd, "%s\n", jsonbuf);
-				fflush(logfd);
-			}
-
-			if (sockfd > 0 && jok ) 
-				outjson();
+			if(json_obj)
+				buildxidjson(&(p[i + 3]), glen);
 
 			i += 3 + glen;
 			break;
@@ -334,7 +289,6 @@ void outxid(unsigned int faddr, unsigned int taddr, msgblk_t * blk,unsigned char
 		if (verbose > 1) {
 			fprintf(logfd, "unknown group %02x\n", p[i]);
 			dumpdata(&(p[i]), glen + 3);
-			fflush(logfd);
 		}
 		i += 3 + glen;
 	} while (i < len);

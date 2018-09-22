@@ -96,6 +96,10 @@ extern float Cbuff[RTLINBUFSZ / 2];
 #endif
 
 extern int verbose;
+extern int grndmess;
+extern int emptymess;
+extern int undecmess;
+
 extern FILE *logfd;
 
 #ifdef WITH_RTL

@@ -99,6 +99,12 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	}
 
 	/* init airspy */
+	result = airspy_init();
+	if (result != AIRSPY_SUCCESS) {
+		fprintf(stderr, "airspy_init() failed: %s (%d)\n", airspy_error_name(result), result);
+		return -1;
+	}
+
 	result = airspy_open(&device);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);

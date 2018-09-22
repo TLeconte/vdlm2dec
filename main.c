@@ -31,6 +31,9 @@
 #include "vdlm2.h"
 
 int verbose = 1;
+int grndmess = 0;
+int emptymess = 0;
+int undecmess = 0;
 int jsonout = 0;
 char *Rawaddr = NULL;
 char *idstation = NULL ;
@@ -68,8 +71,13 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
 #endif
+	fprintf(stderr, " -i stid :\t\tlocal receiver station id\n");
+	fprintf(stderr, " -v :\t\t\tverbose output\n");
+	fprintf(stderr, " -q :\t\t\tquiet output\n");
 	fprintf(stderr, " -J :\t\t\tjson output\n");
-	fprintf(stderr, " -q :\t\t\tquiet\n");
+	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
+	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
+	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
 	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n");
 	exit(1);
@@ -94,7 +102,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:i")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:iGEU")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -134,6 +142,15 @@ int main(int argc, char **argv)
 			break;
 		case 'i':
 			idstation = strndup(optarg, 8);
+			break;
+		case 'G':
+			grndmess=1;
+			break;
+		case 'E':
+			emptymess = 1;
+			break;
+		case 'U':
+			undecmess = 1;
 			break;
 
 		default:

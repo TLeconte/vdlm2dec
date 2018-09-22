@@ -29,12 +29,7 @@
 #include "cJSON.h"
 
 extern int verbose;
-extern char *idstation;
-
-extern int jsonout;
-extern char* jsonbuf;
-extern int sockfd;
-extern  void outjson(void);
+extern cJSON *json_obj;
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
@@ -59,36 +54,11 @@ static void printmsg(const acarsmsg_t * msg)
 	fflush(logfd);
 }
 
-static int buildjson(unsigned int faddr,unsigned int taddr,acarsmsg_t * msg, int chn, int freqb, struct timeval tv)
+static void buildacarsjson(acarsmsg_t * msg)
 {
 
 	oooi_t oooi;
-	cJSON *json_obj;
-	int ok = 0;
 	char convert_tmp[8];
-#if defined (WITH_RTL) || defined (WITH_AIR)
-        float freq = freqb / 1000000.0;
-#else
-        float freq = 0;
-#endif
-
-	json_obj = cJSON_CreateObject();
-	if (json_obj == NULL)
-		return ok;
-
-	double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
-	cJSON_AddNumberToObject(json_obj, "timestamp", t);
-
-	cJSON_AddStringToObject(json_obj, "station_id", idstation);
-
-	cJSON_AddNumberToObject(json_obj, "channel", chn);
-
-        snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", freq);
-        cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
-
-	cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
-
-	cJSON_AddNumberToObject(json_obj, "grndst", taddr & 0xffffff);
 
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
 	cJSON_AddStringToObject(json_obj, "mode", convert_tmp);
@@ -134,18 +104,14 @@ static int buildjson(unsigned int faddr,unsigned int taddr,acarsmsg_t * msg, int
 		if(oooi.won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
 	}
-	ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
-	cJSON_Delete(json_obj);
-	return ok;
 }
 
 
-void outacars(unsigned int vaddr,unsigned int taddr,msgblk_t * blk,unsigned char *txt, int len)
+void outacars(unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	int i, k, j;
 	unsigned int crc;
-	int jok=0;
 
 	crc = 0;
 	/* test crc, set le and remove parity */
@@ -154,7 +120,8 @@ void outacars(unsigned int vaddr,unsigned int taddr,msgblk_t * blk,unsigned char
 		txt[i] &= 0x7f;
 	}
 	if (crc) {
-		fprintf(logfd, "crc error\n");
+		if(verbose) fprintf(logfd, "crc error\n");
+		return;
 	}
 
 	/* fill msg struct */
@@ -224,17 +191,7 @@ void outacars(unsigned int vaddr,unsigned int taddr,msgblk_t * blk,unsigned char
 		printmsg(&msg);
 	}
 
-	// build the JSON buffer if needed
-	if(jsonbuf)
-		jok=buildjson(vaddr, taddr, &msg, blk->chn, blk->Fr, blk->tv);
-
-	if(jsonout && jok) {
-		fprintf(logfd, "%s\n", jsonbuf);
-		fflush(logfd);
-	}
-
-	if ((sockfd > 0) && jok) {
-		outjson();
-	}
+	if(json_obj)
+		buildacarsjson(&msg);
 
 }

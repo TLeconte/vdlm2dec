@@ -29,13 +29,17 @@
 
 #include "vdlm2.h"
 #include "acars.h"
+#include "cJSON.h"
 
-char *jsonbuf=NULL;
+extern char *idstation;
+extern int jsonout;
+extern int outxid(unsigned char *p, int len);
+extern int outacars(unsigned char *txt, int len);
 
-int sockfd=-1;
+cJSON *json_obj;
 
-extern int outxid(unsigned int faddr,unsigned int taddr,msgblk_t * blk,unsigned char *p, int len);
-extern int outacars(unsigned int faddr,unsigned int taddr,msgblk_t * blk,unsigned char *txt, int len);
+static char *jsonbuf;
+static int sockfd=-1;
 
 int initOutput(char *Rawaddr)
 {
@@ -101,17 +105,54 @@ int initOutput(char *Rawaddr)
 
 void initJson(void)
 {
-	jsonbuf=malloc(JSONBUFLEN);
+       jsonbuf=malloc(JSONBUFLEN);
 }
 
-void outjson()
+static void outjson()
 {
         char pkt[500];
+	int ok;
 
-	if(jsonbuf==NULL || sockfd<0) return;
+        ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
+        cJSON_Delete(json_obj);
 
-        snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-        write(sockfd, pkt, strlen(pkt));
+	if(!ok) return;
+	
+        if(jsonout) {
+               fprintf(logfd, "%s\n", jsonbuf);
+               fflush(logfd);
+        }
+
+        if (sockfd > 0 ) {
+        	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
+        	ok=write(sockfd, pkt, strlen(pkt));
+	}
+}
+
+static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgblk_t * blk)
+{
+        char convert_tmp[8];
+        double t = (double)blk->tv.tv_sec + ((double)blk->tv.tv_usec)/1e6;
+
+        json_obj = cJSON_CreateObject();
+	if(json_obj==NULL) return ;
+	
+        cJSON_AddNumberToObject(json_obj, "timestamp", t);
+        cJSON_AddStringToObject(json_obj, "station_id", idstation);
+
+        cJSON_AddNumberToObject(json_obj, "channel", blk->chn);
+
+        snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", blk->Fr/1000000.0);
+        cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
+
+	if(fromair) {
+        	cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
+        	cJSON_AddNumberToObject(json_obj, "toaddr", taddr & 0xffffff);
+	} else {
+        	cJSON_AddNumberToObject(json_obj, "fromaddr", faddr & 0xffffff);
+        	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
+	}
+
 }
 
 void dumpdata(unsigned char *p, int len)
@@ -132,6 +173,26 @@ void dumpdata(unsigned char *p, int len)
 				fprintf(logfd, ".");
 		fprintf(logfd, "|\n");
 	}
+}
+
+static void outundec(unsigned char *p, int len)
+{
+ char *mbuff;
+
+ if(json_obj) {
+	int i;
+	mbuff=malloc(2*len+1);
+	if(mbuff==0) return;
+	for (i = 0; i < len; i++) 
+		sprintf(&(mbuff[2*i]), "%02hhx ", p[i]);
+	mbuff[2*i]='\0';
+        cJSON_AddStringToObject(json_obj, "data", mbuff);
+	free(mbuff);
+ }
+
+ if(verbose>1)
+ 	dumpdata(p,len);
+
 }
 
 static unsigned int vdlm2addr(unsigned char *hdata)
@@ -228,13 +289,20 @@ static void printdate(struct timeval tv)
 
 void out(msgblk_t * blk, unsigned char *hdata, int l)
 {
-	int d;
 	int rep = (hdata[5] & 2) >> 1;
 	int gnd = hdata[1] & 2;
 	unsigned int faddr,taddr;
+	int dec,fromair;
 
 	faddr=vdlm2addr(&(hdata[5]));
 	taddr=vdlm2addr(&(hdata[1]));
+
+	fromair=((faddr >> 24)==1);
+
+	if(!grndmess && !fromair) return;
+	if(!emptymess && l==13){
+			return;
+	}
 
 	if(verbose) {
         	fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
@@ -250,27 +318,35 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 		outlinkctrl(hdata[9], rep);
 	}
+	if(jsonbuf) 
+		buildjsonobj(faddr,taddr,fromair,blk);
 
-	d = 0;
-	if (l == 13) {
-		d = 1;
-	}
-
+	dec=0;
 	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(faddr,taddr,blk,&(hdata[13]), l - 16);
+		outacars(&(hdata[13]), l - 16);
+		dec=1;
 	}
 
 	if (l >= 14 && hdata[10] == 0x82) {
-		outxid(faddr,taddr,blk,&(hdata[11]), l - 14);
+		outxid(&(hdata[11]), l - 14);
+		dec=1;
 	}
 
-	if (d == 0) {
-		if(verbose && l>13) 
+	if(l>13 && dec==0 && undecmess) {
+		if(verbose) 
 			fprintf(logfd, "unknown data\n");
-		if(verbose>1) 
-			dumpdata(&(hdata[10]), l - 13);
+		if(json_obj || verbose>1)
+			outundec(&(hdata[10]), l - 13);
 	}
 
-	fflush(logfd);
+	if(l>13 && dec==0 && !undecmess && json_obj) {
+        	cJSON_Delete(json_obj);
+		json_obj=NULL;
+	}
 
+	if(json_obj)
+             outjson();
+
+	if(verbose)
+		fflush(logfd);
 }
