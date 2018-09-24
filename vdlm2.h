@@ -82,7 +82,7 @@ typedef struct {
 
 } channel_t;
 
-#define JSONBUFLEN 30000
+#define JSONBUFLEN 50000
 
 extern unsigned int Fc;
 extern pthread_barrier_t Bar1, Bar2;

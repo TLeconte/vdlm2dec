@@ -110,22 +110,24 @@ void initJson(void)
 
 static void outjson()
 {
-        char pkt[500];
 	int ok;
+	int lp;
 
         ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
         cJSON_Delete(json_obj);
 
 	if(!ok) return;
 	
+	lp=strlen(jsonbuf);
+	jsonbuf[lp]='\n'; jsonbuf[lp+1]='\0';
+
         if(jsonout) {
-               fprintf(logfd, "%s\n", jsonbuf);
+               fwrite(jsonbuf,1,lp+1,logfd);
                fflush(logfd);
         }
 
         if (sockfd > 0 ) {
-        	snprintf(pkt, sizeof(pkt), "%s\n", jsonbuf);
-        	ok=write(sockfd, pkt, strlen(pkt));
+        	ok=write(sockfd, jsonbuf, lp+1);
 	}
 }
 
