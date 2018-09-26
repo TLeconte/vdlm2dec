@@ -36,7 +36,7 @@ extern int jsonout;
 extern int outxid(unsigned char *p, int len);
 extern int outacars(unsigned char *txt, int len);
 
-cJSON *json_obj;
+cJSON *json_obj=NULL;
 
 static char *jsonbuf;
 static int sockfd=-1;
@@ -115,6 +115,7 @@ static void outjson()
 
         ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
         cJSON_Delete(json_obj);
+	json_obj=NULL;
 
 	if(!ok) return;
 	
