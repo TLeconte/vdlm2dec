@@ -308,7 +308,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	}
 
 	if(verbose) {
-        	fprintf(logfd, "\n[#%1d (F:%3.3f P:%.1f) ", blk->chn + 1,
+        	fprintf(logfd, "\n[#%1d (F:%3.3f P:%+05.1f) ", blk->chn + 1,
                         blk->Fr / 1000000.0, blk->ppm);
         	printdate(blk->tv);
         	fprintf(logfd, " --------------------------------\n");
