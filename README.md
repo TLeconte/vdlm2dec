@@ -95,13 +95,38 @@ It depends on some external libraries :
  * libairspy for airspy (https://github.com/airspy/airspyone_host)
 
 ### Make
-for rtl-sdr 
+#### for rtl-sdr 
 
 > make -f  Makefile.rtl
 
-for airspy
+#### for airspy R2
 
 > make -f Makefile.air
+
+#### for airspy mini
+In vdlm2.h change :
+
+    #ifdef WITH_AIR
+    #define SDRINRATE 5000000
+    #define SDRCLK  1250
+    #endif
+
+into 
+
+    #ifdef WITH_AIR
+    #define SDRINRATE 6000000
+    #define SDRCLK  1500
+    #endif
+
+comment the following lines in air.c :
+
+    //airspy_r820t_write(device, 10, 0xB0 | (15-j));
+    //airspy_r820t_write(device, 11, 0xE0 | (15-i));
+
+then 
+
+> make -f Makefile.air
+
 
 ## Frequency correction for rtl-sdr
  1) when receiving a message ex :
