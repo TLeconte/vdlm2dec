@@ -97,12 +97,12 @@ int main(int argc, char **argv)
         char sys_hostname[8];
 
         gethostname(sys_hostname, sizeof(sys_hostname));
-        idstation = strndup(sys_hostname, 8);
+        idstation = strdup(sys_hostname);
 
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:iGEU")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:Jj:i:GEU")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 			jsonout = 1;
 			break;
 		case 'i':
-			idstation = strndup(optarg, 8);
+			idstation = strdup(optarg);
 			break;
 		case 'G':
 			grndmess=1;
