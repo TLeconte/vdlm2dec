@@ -127,17 +127,29 @@ then
 
 > make -f Makefile.air
 
+Thanks to istamov for testing
 
 ## Frequency correction for rtl-sdr
- 1) when receiving a message ex :
-     [#1 (F:136.725 P:-3.7) 26/01/2018 21:34:57.633 --------------------------------
-  read the ppm displayed in P: field.
- 2) Guess an average, round to near integer
- 3) set the -p option as the opposite of this number (ex : -p 4 )
+In message header, the P field give an estimation of frequency drift in ppm :
+
+   [#4 (F:136.975 P:+03.1) 28/09/2018 09:36:17.739 --------------------------------
+
+This drift could come from transmitter, doppler effect and receiver.
+To try to estimate and compensate receiver frequency drift, first run vdlm2dec for a while logging the received messages :
+
+> ./vdlm2dec -l logmessage -r 0 136.725 136.775 136.875 136.975 
+
+then extract frequency drifts :
+
+> grep " P:" logmessage | cut -c 18-22 > ppmlog
+
+from ppmlog estimate an average, and use the opposite as -p correction parameter. Ie: if the average is +5.2 use :
+
+> ./vdlm2dec -p -5 -r 0 136.725 136.775 136.875 136.975 
 
 # Acarsserv
 
-acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more vdlm2dec processes and stores them in a sqlite database.
+acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more vdlm2dec or [acarsdec](https://github.com/TLeconte/acarsdec) processes and stores them in a sqlite database.
 
 See : [acarsserv](https://github.com/TLeconte/acarsserv)
 
@@ -150,6 +162,5 @@ These code are free software; you can redistribute it and/or modify
 it under the terms of the GNU Library General Public License version 2
 published by the Free Software Foundation.
 
-They include [cJSON](https://github.com/DaveGamble/cJSON) Copyright (c) 2009-2017 Dave Gamble a
-nd cJSON contributors
+They include [cJSON](https://github.com/DaveGamble/cJSON) Copyright (c) 2009-2017 Dave Gamble and cJSON contributors
 
