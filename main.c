@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <math.h>
 #include <sys/types.h>
+#include <sys/param.h>
 
 #include "vdlm2.h"
 
@@ -94,9 +95,10 @@ int main(int argc, char **argv)
 	int n,c;
 	int res=0;
 	struct sigaction sigact;
-        char sys_hostname[8];
+        char sys_hostname[HOST_NAME_MAX+1];
 
         gethostname(sys_hostname, sizeof(sys_hostname));
+	sys_hostname[sizeof(sys_hostname) - 1] = '\0';
         idstation = strdup(sys_hostname);
 
 	nbch = 0;
@@ -141,6 +143,7 @@ int main(int argc, char **argv)
 			jsonout = 1;
 			break;
 		case 'i':
+			free(idstation);
 			idstation = strdup(optarg);
 			break;
 		case 'G':
