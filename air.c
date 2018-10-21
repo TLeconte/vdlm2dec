@@ -98,17 +98,9 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return 1;
 	}
 
-	/* init airspy */
-	result = airspy_init();
-	if (result != AIRSPY_SUCCESS) {
-		fprintf(stderr, "airspy_init() failed: %s (%d)\n", airspy_error_name(result), result);
-		return -1;
-	}
-
 	result = airspy_open(&device);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_exit();
 		return -1;
 	}
 
@@ -119,7 +111,6 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		if(supported_samplerates[i]==SDRINRATE/2) break;
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
-		airspy_exit();
 		return -1;
 	}
 	free(supported_samplerates);
@@ -128,7 +119,6 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
@@ -136,14 +126,11 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 
-        result = airspy_set_packing(device, 1);
-        if( result != AIRSPY_SUCCESS ) {
-                fprintf(stderr,"airspy_set_packing true failed: %s (%d)\n", airspy_error_name(result), result);
-        }
+       /* had problem with packing , disable it*/
+        airspy_set_packing(device, 0);
 
         result = airspy_set_linearity_gain(device, gain);
         if( result != AIRSPY_SUCCESS ) {
@@ -162,7 +149,6 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_freq() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
-		airspy_exit();
 		return -1;
 	}
 	if (verbose)
