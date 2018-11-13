@@ -104,11 +104,18 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return -1;
 	}
 
+	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
+	if( result != AIRSPY_SUCCESS ) {
+		fprintf(stderr,"airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
+		airspy_close(device);
+		return -1;
+	}
+
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
 	for(i=0;i<count;i++)
-		if(supported_samplerates[i]==SDRINRATE/2) break;
+		if(supported_samplerates[i]==SDRINRATE) break;
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
 		return -1;
@@ -118,13 +125,6 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	result = airspy_set_samplerate(device, i);
 	if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_set_samplerate() failed: %s (%d)\n", airspy_error_name(result), result);
-		airspy_close(device);
-		return -1;
-	}
-
-	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
-	if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_set_sample_type() failed: %s (%d)\n", airspy_error_name(result), result);
 		airspy_close(device);
 		return -1;
 	}
