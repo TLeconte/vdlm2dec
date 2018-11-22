@@ -45,7 +45,7 @@ int gain = 1000;
 int ppm = 0;
 #endif
 #ifdef WITH_AIR
-int gain = 21;
+int gain = 18;
 #endif
 
 int nbch;
@@ -70,7 +70,7 @@ static void usage(void)
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
+		" -g gain :\t\tset linearity gain [0,21] default :18\n");
 #endif
 	fprintf(stderr, " -i stid :\t\tlocal receiver station id\n");
 	fprintf(stderr, " -v :\t\t\tverbose output\n");
