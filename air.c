@@ -58,7 +58,7 @@ static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
         airspy_r820t_write(device, 10, 0xB0 | (15-j));
         airspy_r820t_write(device, 11, 0xE0 | (15-i));
 
-        return((maxF+minF)/2+off);
+        return(((maxF+minF)/2+off+STEPRATE/2)/STEPRATE*STEPRATE);
 }
 
 
