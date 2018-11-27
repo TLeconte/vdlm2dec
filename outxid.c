@@ -31,15 +31,7 @@ extern cJSON *json_obj;
 
 extern void dumpdata(unsigned char *p, int len);
 
-static unsigned int geticaoaddr(unsigned char *p)
-{
- unsigned int addr =
-	    (reversebits(p[0] >> 2, 6) << 21) |
-	    (reversebits(p[1] >> 1, 7) << 14) |
-	    (reversebits(p[2] >> 1, 7) << 7) |
-	    (reversebits(p[3] >> 1, 7));
- return addr;
-}
+extern unsigned int icaoaddr(unsigned char *p);
 
 static void getlatlon(unsigned char *p,  float *lat, float *lon)
 {
@@ -127,7 +119,7 @@ void outprivategr(unsigned char *p, int len)
 				fprintf(logfd, "Acceptable alternative ground stations : ");
 
 				while(n<p[i+1]) {
-				 addr = geticaoaddr(&(p[i+2+n]));
+				 addr = icaoaddr(&(p[i+2+n]));
 				 fprintf(logfd,"%06X ", addr & 0xffffff);
 				 n+=4;
 				}
@@ -164,7 +156,7 @@ void outprivategr(unsigned char *p, int len)
 				while(n<p[i+1]) {
 				 mod = (uint32_t) (p[i+2+n]&0xf0) >> 4;
 				 freq = ((uint32_t) (p[i+2+n]&0x0f) << 8) | ((uint32_t) (p[i + 3])) ;
-				 addr = geticaoaddr(&(p[i+4+n]));
+				 addr = icaoaddr(&(p[i+4+n]));
 				 fprintf(logfd,"%03.2f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
 				 n+=6;
 				}
@@ -205,7 +197,7 @@ void outprivategr(unsigned char *p, int len)
 			}
 		case 0xc5:{
 				unsigned int mask;
-				mask= geticaoaddr(&(p[i+2]));
+				mask= icaoaddr(&(p[i+2]));
 
 				fprintf(logfd, "Station system mask : %06X\n", mask & 0xffffff);
 				break;

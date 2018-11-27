@@ -198,7 +198,7 @@ static void outundec(unsigned char *p, int len)
 
 }
 
-static unsigned int vdlm2addr(unsigned char *hdata)
+unsigned int icaoaddr(unsigned char *hdata)
 {
     unsigned int addr =
     (reversebits(hdata[0] >> 2, 6) << 21) |
@@ -297,8 +297,8 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	unsigned int faddr,taddr;
 	int dec,fromair;
 
-	faddr=vdlm2addr(&(hdata[5]));
-	taddr=vdlm2addr(&(hdata[1]));
+	faddr=icaoaddr(&(hdata[5]));
+	taddr=icaoaddr(&(hdata[1]));
 
 	fromair=((faddr >> 24)==1);
 
