@@ -54,10 +54,9 @@ static void printmsg(const acarsmsg_t * msg)
 	fflush(logfd);
 }
 
-static void buildacarsjson(acarsmsg_t * msg)
+static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi)
 {
 
-	oooi_t oooi;
 	char convert_tmp[8];
 
 	snprintf(convert_tmp, sizeof(convert_tmp), "%c", msg->mode);
@@ -88,28 +87,29 @@ static void buildacarsjson(acarsmsg_t * msg)
 	if (msg->be == 0x17)
 		cJSON_AddTrueToObject(json_obj, "end");
 
-	if(DecodeLabel(msg, &oooi)) {
-		if(oooi.sa[0])
-			cJSON_AddStringToObject(json_obj, "depa", oooi.sa);
-		if(oooi.da[0])
-			cJSON_AddStringToObject(json_obj, "dsta", oooi.da);
-		if(oooi.eta[0])
-			cJSON_AddStringToObject(json_obj, "eta", oooi.eta);
-		if(oooi.gout[0])
-			cJSON_AddStringToObject(json_obj, "gtout", oooi.gout);
-		if(oooi.gin[0])
-			cJSON_AddStringToObject(json_obj, "gtin", oooi.gin);
-		if(oooi.woff[0])
-			cJSON_AddStringToObject(json_obj, "wloff", oooi.woff);
-		if(oooi.won[0])
-			cJSON_AddStringToObject(json_obj, "wlin", oooi.won);
+	if(oooi) {
+		if(oooi->sa[0])
+			cJSON_AddStringToObject(json_obj, "depa", oooi->sa);
+		if(oooi->da[0])
+			cJSON_AddStringToObject(json_obj, "dsta", oooi->da);
+		if(oooi->eta[0])
+			cJSON_AddStringToObject(json_obj, "eta", oooi->eta);
+		if(oooi->gout[0])
+			cJSON_AddStringToObject(json_obj, "gtout", oooi->gout);
+		if(oooi->gin[0])
+			cJSON_AddStringToObject(json_obj, "gtin", oooi->gin);
+		if(oooi->woff[0])
+			cJSON_AddStringToObject(json_obj, "wloff", oooi->woff);
+		if(oooi->won[0])
+			cJSON_AddStringToObject(json_obj, "wlin", oooi->won);
 	}
 }
 
 
-void outacars(unsigned char *txt, int len)
+void outacars(flight_t *fl,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
+	oooi_t oooi;
 	int i, k, j;
 	unsigned int crc;
 
@@ -191,7 +191,20 @@ void outacars(unsigned char *txt, int len)
 		printmsg(&msg);
 	}
 
+	DecodeLabel(&msg, &oooi);
+
+	if(fl) {
+		strncpy(fl->fid,msg.fid,7);
+		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
+                if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
+                if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
+                if(oooi.gout[0]) memcpy(fl->oooi.gout,oooi.gout,5);
+                if(oooi.gin[0]) memcpy(fl->oooi.gin,oooi.gin,5);
+                if(oooi.woff[0]) memcpy(fl->oooi.woff,oooi.woff,5);
+                if(oooi.won[0]) memcpy(fl->oooi.won,oooi.won,5);
+	}
+
 	if(json_obj)
-		buildacarsjson(&msg);
+		addacarsjson(&msg,&oooi);
 
 }

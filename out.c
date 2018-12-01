@@ -33,8 +33,11 @@
 
 extern char *idstation;
 extern int jsonout;
-extern int outxid(unsigned char *p, int len);
-extern int outacars(unsigned char *txt, int len);
+extern int routeout;
+extern int mdly;
+
+extern int outxid(flight_t *fl, unsigned char *p, int len);
+extern int outacars(flight_t *fl, unsigned char *txt, int len);
 
 cJSON *json_obj=NULL;
 
@@ -156,6 +159,83 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgbl
         	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
 	}
 
+}
+
+
+static  flight_t *addFlight(uint32_t addr, struct timeval tv)
+{
+	static flight_t  *flight_head=NULL;
+        flight_t *fl,*fld,*flp;
+
+	/* find aircraft */
+        fl=flight_head;
+        flp=NULL;
+        while(fl) {
+                if(addr==fl->addr) break;
+                flp=fl;
+                fl=fl->next;
+        }
+
+        if(fl==NULL) {
+                fl=calloc(1,sizeof(flight_t));
+                fl->addr=addr;
+                fl->nbm=0;
+                fl->ts=tv;
+                fl->rt=0;
+                fl->next=NULL;
+        }
+
+        fl->tl=tv;
+        fl->nbm+=1;
+
+        if(flp) {
+                flp->next=fl->next;
+                fl->next=flight_head;
+        }
+        flight_head=fl;
+
+	/* remove olds */
+        flp=NULL;fld=fl;
+        while(fld) {
+                if(fld->tl.tv_sec<(tv.tv_sec-mdly)) {
+                        if(flp) {
+                                flp->next=fld->next;
+                                free(fld);
+                                fld=flp->next;
+                        } else {
+                                flight_head=fld->next;
+                                free(fld);
+                                fld=flight_head;
+                        }
+                } else {
+                        flp=fld;
+                        fld=fld->next;
+                }
+        }
+
+        return(fl);
+}
+
+static void routejson(flight_t *fl,struct timeval tv)
+{
+  if(fl==NULL)
+        return;
+
+  if(fl->rt==0 && fl->fid[0] && fl->oooi.sa[0] && fl->oooi.da[0]) {
+
+        json_obj = cJSON_CreateObject();
+        if (json_obj == NULL)
+                return ;
+
+        double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+        cJSON_AddNumberToObject(json_obj, "timestamp", t);
+        cJSON_AddStringToObject(json_obj, "station_id", idstation);
+        cJSON_AddStringToObject(json_obj, "flight", fl->fid);
+        cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
+        cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
+
+        fl->rt=1;
+ }
 }
 
 void dumpdata(unsigned char *p, int len)
@@ -296,6 +376,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	int gnd = hdata[1] & 2;
 	unsigned int faddr,taddr;
 	int dec,fromair;
+	flight_t *fl=NULL;
 
 	faddr=icaoaddr(&(hdata[5]));
 	taddr=icaoaddr(&(hdata[1]));
@@ -306,6 +387,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	if(!emptymess && l==13){
 			return;
 	}
+
+	if(fromair)
+		fl=addFlight(faddr,blk->tv);
 
 	if(verbose) {
         	fprintf(logfd, "\n[#%1d (F:%3.3f P:%+05.1f) ", blk->chn + 1,
@@ -321,17 +405,18 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 		outlinkctrl(hdata[9], rep);
 	}
-	if(jsonbuf) 
+
+	if(jsonbuf && !routeout) 
 		buildjsonobj(faddr,taddr,fromair,blk);
 
 	dec=0;
 	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(&(hdata[13]), l - 16);
+		outacars(fl,&(hdata[13]), l - 16);
 		dec=1;
 	}
 
 	if (l >= 14 && hdata[10] == 0x82) {
-		outxid(&(hdata[11]), l - 14);
+		outxid(fl,&(hdata[11]), l - 14);
 		dec=1;
 	}
 
@@ -346,6 +431,9 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
         	cJSON_Delete(json_obj);
 		json_obj=NULL;
 	}
+
+	if(fl)
+		routejson(fl,blk->tv);
 
 	if(json_obj)
              outjson();

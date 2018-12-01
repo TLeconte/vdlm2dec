@@ -37,3 +37,15 @@ typedef struct {
 	char woff[5];
 	char won[5];
 } oooi_t;
+
+typedef struct flight_s flight_t;
+struct flight_s {
+        flight_t *next;
+        uint32_t addr;
+        char fid[7];
+        struct timeval ts,tl;
+        int nbm;
+        int rt;
+        oooi_t oooi;
+};
+

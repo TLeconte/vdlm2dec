@@ -233,7 +233,7 @@ static void buildxidjson(unsigned char *p, int len)
 	i = 0;
 	da[0]=da[4]='\0';
 	do {
-		short len = p[i + 1];
+		short slen = p[i + 1];
 
 		if (p[i] == 0x83) {
 			memcpy(da,&(p[i+2]),4);
@@ -243,7 +243,7 @@ static void buildxidjson(unsigned char *p, int len)
 			alt = p[i + 5] * 1000;
 			pos=1;
 		}
-		i += 2 + len;
+		i += 2 + slen;
 	} while (i < len);
 
 	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
@@ -255,7 +255,23 @@ static void buildxidjson(unsigned char *p, int len)
 	}
 }
 
-void outxid(unsigned char *p, int len)
+void addda(flight_t *fl, unsigned char *p, int len)
+{
+	int i;
+	i = 0;
+
+	do {
+		short slen = p[i + 1];
+
+		if (p[i] == 0x83) {
+			memcpy(fl->oooi.da,&(p[i+2]),4);
+		}
+		i += 2 + slen;
+	} while (i < len);
+
+}
+
+void outxid(flight_t *fl, unsigned char *p, int len)
 {
 	int i;
 
@@ -274,6 +290,8 @@ void outxid(unsigned char *p, int len)
 
 			if(json_obj)
 				buildxidjson(&(p[i + 3]), glen);
+
+			addda(fl,&(p[i + 3]), glen);
 
 			i += 3 + glen;
 			break;

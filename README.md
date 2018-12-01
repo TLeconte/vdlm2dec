@@ -20,7 +20,9 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
 
  -q :			quiet output
 
- -J :			json logfile output
+ -J :			json output
+
+ -R :			route json format output
 
  -l logfile :		output log (stderr by default)
 
@@ -54,27 +56,6 @@ For airspy :
     Frame-I: Ns:1 Nr:0
     unknown data
     
-    [#1 (F:136.725 P:-3.5) 11/03/2018 15:52:28.240 --------------------------------
-    Response from Aircraft:406321 (airborne) to GroundD:1191EA 
-    Frame-S: Nr:4 RR
-    
-    [#3 (F:136.875 P:-5.8) 11/03/2018 15:52:29.009 --------------------------------
-    Command from Aircraft:398517 (airborne) to GroundD:27CB21 
-    Frame-I: Ns:5 Nr:6
-    unknown data
-    
-    [#4 (F:136.975 P:-5.0) 11/03/2018 15:52:29.006 --------------------------------
-    Command from Aircraft:440176 (airborne) to GroundD:1098CA 
-    Frame-I: Ns:5 Nr:6
-    ACARS
-    Aircraft reg: OE-IJF Flight id: U287HY
-    Mode: 2 Msg. label: H2
-    Block id: 5 Ack: !
-    Msg. no: M60A
-    Message :
-    02A111552LFRSLPPRN47097W001372111532  85P112     131P107205018G     185P097209026G     239P087215031G     292P072214037G     339P065220041G     378P052221044G     406P042226047G     427P035222046G     448P03022
-    Block End
-    
     [#2 (F:136.775 P:-6.6) 11/03/2018 15:52:29.357 --------------------------------
     Command from Aircraft:461FA1 (airborne) to GroundD:280645 
     Frame-I: Ns:4 Nr:7
@@ -84,6 +65,22 @@ For airspy :
     Command from Aircraft:440630 (airborne) to GroundD:11989A 
     Frame-I: Ns:1 Nr:4
     unknown data
+
+JSON out :
+> ./vdlm2dec -J 136.725 136.775 136.875 136.975 
+    {"timestamp":1543675373.6302309,"channel":2,"freq":136.875,"icao":4221787,"toaddr":2499139,"mode":"2","label":"10","block_id":"4","ack":"!","tail":"G-GATL","flight":"BA030T","msgno":"M16A","text":"MET01LPPR   "}
+    {"timestamp":1543675375.78301,"channel":2,"freq":136.875,"icao":4221787,"toaddr":2499139,"mode":"2","label":"_d","block_id":"5","ack":"E","tail":"G-GATL","flight":"BA030T","msgno":"S57A"}
+    {"timestamp":1543675376.9893639,"channel":2,"freq":136.875,"icao":5024073,"toaddr":2199779,"dsta":"GMAD"}
+    {"timestamp":1543675377.651469,"channel":3,"freq":136.975,"icao":4921892,"toaddr":1087690,"mode":"2","label":"H2","block_id":"5","ack":"!","tail":"HB-JXK","flight":"DS51QH","msgno":"M69E","text":"33297M517308091G    "}
+
+
+Route JSON output :
+> ./vdlm2dec -R 136.725 136.775 136.875 136.975 
+    {"timestamp":1543674072.0800021,"flight":"BA03TV","depa":"EGLL","dsta":"LFBO"}
+    {"timestamp":1543674324.1648419,"flight":"BA2669","depa":"GMMX","dsta":"EGKK"}
+    {"timestamp":1543674367.1799631,"flight":"BA066Q","depa":"EGKK","dsta":"GMMX"}
+    {"timestamp":1543674485.4120231,"flight":"BA490U","depa":"EGLL","dsta":"LXGB"}
+
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.
