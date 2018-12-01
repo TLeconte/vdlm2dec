@@ -144,7 +144,7 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgbl
 	if(json_obj==NULL) return ;
 	
         cJSON_AddNumberToObject(json_obj, "timestamp", t);
-        cJSON_AddStringToObject(json_obj, "station_id", idstation);
+        if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
 
         cJSON_AddNumberToObject(json_obj, "channel", blk->chn);
 
@@ -229,7 +229,7 @@ static void routejson(flight_t *fl,struct timeval tv)
 
         double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
         cJSON_AddNumberToObject(json_obj, "timestamp", t);
-        cJSON_AddStringToObject(json_obj, "station_id", idstation);
+        if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
         cJSON_AddStringToObject(json_obj, "flight", fl->fid);
         cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
         cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);

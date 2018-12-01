@@ -61,10 +61,6 @@ For airspy :
     Frame-I: Ns:4 Nr:7
     unknown data
 
-    [#1 (F:136.725 P:-2.5) 11/03/2018 15:52:29.359 --------------------------------
-    Command from Aircraft:440630 (airborne) to GroundD:11989A 
-    Frame-I: Ns:1 Nr:4
-    unknown data
 
 JSON out :
 > ./vdlm2dec -J 136.725 136.775 136.875 136.975 
@@ -74,7 +70,7 @@ JSON out :
     {"timestamp":1543675377.651469,"channel":3,"freq":136.975,"icao":4921892,"toaddr":1087690,"mode":"2","label":"H2","block_id":"5","ack":"!","tail":"HB-JXK","flight":"DS51QH","msgno":"M69E","text":"33297M517308091G    "}
 
 
-Route JSON output :
+Route JSON output (wait for a while before having an output):
 > ./vdlm2dec -R 136.725 136.775 136.875 136.975 
     {"timestamp":1543674072.0800021,"flight":"BA03TV","depa":"EGLL","dsta":"LFBO"}
     {"timestamp":1543674324.1648419,"flight":"BA2669","depa":"GMMX","dsta":"EGKK"}
