@@ -3,6 +3,8 @@ vdlm2dec is a vdl mode 2 decoder with built-in rtl_sdr or airspy front end.
 
 It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range )
 
+It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
+
 ## Usage
 > vdlm2dec  [-l logfile]  [-g gain] [-i stid] [-v] [-q] [-J] [-l logfile] [-r rtldevicenumber]  Frequencies(Mhz)
 
@@ -85,6 +87,7 @@ It has been tested on x86_64 with fedora 27, on tegra TK1,TX1 with Ubuntu
 It depends on some external libraries :
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy (https://github.com/airspy/airspyone_host)
+ * optionaly libacars for decoding ATS applications (https://github.com/szpajder/libacars)
 
 ### Compile
 

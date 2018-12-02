@@ -23,6 +23,11 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
+#ifdef HAVE_LIBACARS
+#include <libacars/libacars.h>
+#include <libacars/acars.h>
+#include <libacars/vstring.h>
+#endif
 #include "vdlm2.h"
 #include "crc.h"
 #include "acars.h"
@@ -32,6 +37,27 @@ extern int verbose;
 extern cJSON *json_obj;
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
+
+#ifdef HAVE_LIBACARS
+void decode_and_print_acars_apps(const acarsmsg_t * msg) {
+        if(msg->txt[0] == '\0')
+                return;
+
+        la_msg_dir direction;
+        if(msg->bid >= '0' && msg->bid <= '9')
+                direction = LA_MSG_DIR_AIR2GND;
+        else
+                direction = LA_MSG_DIR_GND2AIR;
+
+        la_proto_node *node = la_acars_decode_apps(msg->label, msg->txt, direction);
+        if(node != NULL) {
+                la_vstring *vstr = la_proto_tree_format_text(NULL, node);
+                fprintf(logfd, "%s\n", vstr->str);
+                la_vstring_destroy(vstr, true);
+        }
+        la_proto_tree_destroy(node);
+}
+#endif
 
 static void printmsg(const acarsmsg_t * msg)
 {
@@ -50,6 +76,10 @@ static void printmsg(const acarsmsg_t * msg)
 	if(msg->txt[0]) fprintf(logfd, "Message :\n%s\n", msg->txt);
 	if (msg->be == 0x17)
 		fprintf(logfd, "Block End\n");
+
+#ifdef HAVE_LIBACARS
+        decode_and_print_acars_apps(msg);
+#endif
 
 	fflush(logfd);
 }
@@ -104,7 +134,6 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi)
 			cJSON_AddStringToObject(json_obj, "wlin", oooi->won);
 	}
 }
-
 
 void outacars(flight_t *fl,unsigned char *txt, int len)
 {
