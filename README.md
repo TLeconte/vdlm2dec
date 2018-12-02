@@ -83,20 +83,35 @@ vdlm2dec must compile directly on any modern Linux distrib.
 It has been tested on x86_64 with fedora 27, on tegra TK1,TX1 with Ubuntu  
 
 It depends on some external libraries :
- * libusb
  * librtlsdr for software radio rtl dongle input (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  * libairspy for airspy (https://github.com/airspy/airspyone_host)
 
-### Make
-#### for rtl-sdr 
+### Compile
 
-> make -f  Makefile.rtl
+#### For rtl_sdr :
+> mkdir build
 
-#### for airspy R2
+> cd build
 
-> make -f Makefile.air
+> cmake .. -Drtl=ON
 
-#### for airspy mini
+> make
+
+> sudo make install
+
+
+#### For airspy :
+> mkdir build
+
+> cd build
+
+> cmake .. -Dairspy=ON
+
+> make
+
+> sudo make install
+
+#### For airspy mini
 In vdlm2.h change :
 
     #ifdef WITH_AIR
@@ -116,11 +131,7 @@ comment the following lines in air.c :
     //airspy_r820t_write(device, 10, 0xB0 | (15-j));
     //airspy_r820t_write(device, 11, 0xE0 | (15-i));
 
-then 
-
-> make -f Makefile.air
-
-Thanks to istamov for testing
+then compile as for the airspy (see above)
 
 ## Frequency correction for rtl-sdr
 In message header, the P field give an estimation of frequency drift in ppm :
