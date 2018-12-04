@@ -27,7 +27,10 @@
 #include <libacars/libacars.h>
 #include <libacars/acars.h>
 #include <libacars/vstring.h>
+#else
+typedef void la_proto_node;
 #endif
+
 #include "vdlm2.h"
 #include "crc.h"
 #include "acars.h"
@@ -38,28 +41,7 @@ extern cJSON *json_obj;
 
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
-#ifdef HAVE_LIBACARS
-void decode_and_print_acars_apps(const acarsmsg_t * msg) {
-        if(msg->txt[0] == '\0')
-                return;
-
-        la_msg_dir direction;
-        if(msg->bid >= '0' && msg->bid <= '9')
-                direction = LA_MSG_DIR_AIR2GND;
-        else
-                direction = LA_MSG_DIR_GND2AIR;
-
-        la_proto_node *node = la_acars_decode_apps(msg->label, msg->txt, direction);
-        if(node != NULL) {
-                la_vstring *vstr = la_proto_tree_format_text(NULL, node);
-                fprintf(logfd, "%s\n", vstr->str);
-                la_vstring_destroy(vstr, true);
-        }
-        la_proto_tree_destroy(node);
-}
-#endif
-
-static void printmsg(const acarsmsg_t * msg)
+static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode)
 {
 	fprintf(logfd, "ACARS\n");
 
@@ -77,14 +59,29 @@ static void printmsg(const acarsmsg_t * msg)
 	if (msg->be == 0x17)
 		fprintf(logfd, "Block End\n");
 
+	if(oooi) {
+		fprintf(logfd, "##########################\n");
+		if(oooi->da[0]) fprintf(logfd,"Destination Airport : %s\n",oooi->da);
+        	if(oooi->sa[0]) fprintf(logfd,"Departure Airport : %s\n",oooi->sa);
+        	if(oooi->eta[0]) fprintf(logfd,"Estimation Time of Arrival : %s\n",oooi->eta);
+        	if(oooi->gout[0]) fprintf(logfd,"Gate out Time : %s\n",oooi->gout);
+        	if(oooi->gin[0]) fprintf(logfd,"Gate in Time : %s\n",oooi->gin);
+        	if(oooi->woff[0]) fprintf(logfd,"Wheels off Tme : %s\n",oooi->woff);
+        	if(oooi->won[0]) fprintf(logfd,"Wheels on Time : %s\n",oooi->won);
+	}
+
 #ifdef HAVE_LIBACARS
-        decode_and_print_acars_apps(msg);
+        if(lanode != NULL) {
+                la_vstring *vstr = la_proto_tree_format_text(NULL, lanode);
+                fprintf(logfd, "%s\n", vstr->str);
+                la_vstring_destroy(vstr, true);
+        }
 #endif
 
 	fflush(logfd);
 }
 
-static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi)
+static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi, la_proto_node *lanode)
 {
 
 	char convert_tmp[8];
@@ -135,12 +132,25 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi)
 	}
 }
 
+void fillFlight(flight_t *fl,acarsmsg_t *msg, oooi_t *oooi, la_proto_node *lanode)
+{
+		strncpy(fl->fid,msg->fid,7);
+		if(oooi->da[0]) memcpy(fl->oooi.da,oooi->da,5);
+                if(oooi->sa[0]) memcpy(fl->oooi.sa,oooi->sa,5);
+                if(oooi->eta[0]) memcpy(fl->oooi.eta,oooi->eta,5);
+                if(oooi->gout[0]) memcpy(fl->oooi.gout,oooi->gout,5);
+                if(oooi->gin[0]) memcpy(fl->oooi.gin,oooi->gin,5);
+                if(oooi->woff[0]) memcpy(fl->oooi.woff,oooi->woff,5);
+                if(oooi->won[0]) memcpy(fl->oooi.won,oooi->won,5);
+}
+
 void outacars(flight_t *fl,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	oooi_t oooi;
 	int i, k, j;
 	unsigned int crc;
+	la_proto_node *lanode;
 
 	crc = 0;
 	/* test crc, set le and remove parity */
@@ -216,24 +226,33 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 	}
 	msg.be = txt[k];
 
-	if (verbose) {
-		printmsg(&msg);
-	}
-
 	DecodeLabel(&msg, &oooi);
 
-	if(fl) {
-		strncpy(fl->fid,msg.fid,7);
-		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
-                if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
-                if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
-                if(oooi.gout[0]) memcpy(fl->oooi.gout,oooi.gout,5);
-                if(oooi.gin[0]) memcpy(fl->oooi.gin,oooi.gin,5);
-                if(oooi.woff[0]) memcpy(fl->oooi.woff,oooi.woff,5);
-                if(oooi.won[0]) memcpy(fl->oooi.won,oooi.won,5);
+#ifdef HAVE_LIBACARS
+	if (txt[0]) {
+        	la_msg_dir direction;
+        	if(msg.bid >= '0' && msg.bid <= '9')
+                	direction = LA_MSG_DIR_AIR2GND;
+        	else
+                	direction = LA_MSG_DIR_GND2AIR;
+
+        	lanode = la_acars_decode_apps(msg.label, msg.txt, direction);
 	}
+#endif
+
+	if (verbose) 
+		printmsg(&msg, &oooi,lanode);
+
+	if(fl)
+	   	fillFlight(fl,&msg,&oooi,lanode);
 
 	if(json_obj)
-		addacarsjson(&msg,&oooi);
+		addacarsjson(&msg,&oooi,lanode);
+
+#ifdef HAVE_LIBACARS
+	if(lanode) 
+        	la_proto_tree_destroy(lanode);
+#endif
+
 
 }
