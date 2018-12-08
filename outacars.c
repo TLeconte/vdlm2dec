@@ -39,6 +39,7 @@ typedef void la_proto_node;
 extern int verbose;
 extern cJSON *json_obj;
 
+extern int label_filter(char *lbl);
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
 static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode)
@@ -58,17 +59,6 @@ static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode
 	if(msg->txt[0]) fprintf(logfd, "Message :\n%s\n", msg->txt);
 	if (msg->be == 0x17)
 		fprintf(logfd, "Block End\n");
-
-	if(oooi) {
-		fprintf(logfd, "##########################\n");
-		if(oooi->da[0]) fprintf(logfd,"Destination Airport : %s\n",oooi->da);
-        	if(oooi->sa[0]) fprintf(logfd,"Departure Airport : %s\n",oooi->sa);
-        	if(oooi->eta[0]) fprintf(logfd,"Estimation Time of Arrival : %s\n",oooi->eta);
-        	if(oooi->gout[0]) fprintf(logfd,"Gate out Time : %s\n",oooi->gout);
-        	if(oooi->gin[0]) fprintf(logfd,"Gate in Time : %s\n",oooi->gin);
-        	if(oooi->woff[0]) fprintf(logfd,"Wheels off Tme : %s\n",oooi->woff);
-        	if(oooi->won[0]) fprintf(logfd,"Wheels on Time : %s\n",oooi->won);
-	}
 
 #ifdef HAVE_LIBACARS
         if(lanode != NULL) {
@@ -130,18 +120,6 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi, la_proto_node *lanode)
 		if(oooi->won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi->won);
 	}
-}
-
-void fillFlight(flight_t *fl,acarsmsg_t *msg, oooi_t *oooi, la_proto_node *lanode)
-{
-		strncpy(fl->fid,msg->fid,7);
-		if(oooi->da[0]) memcpy(fl->oooi.da,oooi->da,5);
-                if(oooi->sa[0]) memcpy(fl->oooi.sa,oooi->sa,5);
-                if(oooi->eta[0]) memcpy(fl->oooi.eta,oooi->eta,5);
-                if(oooi->gout[0]) memcpy(fl->oooi.gout,oooi->gout,5);
-                if(oooi->gin[0]) memcpy(fl->oooi.gin,oooi->gin,5);
-                if(oooi->woff[0]) memcpy(fl->oooi.woff,oooi->woff,5);
-                if(oooi->won[0]) memcpy(fl->oooi.won,oooi->won,5);
 }
 
 void outacars(flight_t *fl,unsigned char *txt, int len)
@@ -226,7 +204,7 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 	}
 	msg.be = txt[k];
 
-	DecodeLabel(&msg, &oooi);
+	if(label_filter(msg.label)==0) return ;
 
 #ifdef HAVE_LIBACARS
 	if (txt[0]) {
@@ -240,11 +218,23 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 	}
 #endif
 
-	if (verbose) 
-		printmsg(&msg, &oooi,lanode);
+	DecodeLabel(&msg, &oooi);
 
-	if(fl)
-	   	fillFlight(fl,&msg,&oooi,lanode);
+	if (verbose) {
+		printmsg(&msg, &oooi,lanode);
+	}
+
+	if(fl) {
+		strncpy(fl->fid,msg.fid,7);
+		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
+                if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
+                if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
+                if(oooi.gout[0]) memcpy(fl->oooi.gout,oooi.gout,5);
+                if(oooi.gin[0]) memcpy(fl->oooi.gin,oooi.gin,5);
+                if(oooi.woff[0]) memcpy(fl->oooi.woff,oooi.woff,5);
+                if(oooi.won[0]) memcpy(fl->oooi.won,oooi.won,5);
+	}
+
 
 	if(json_obj)
 		addacarsjson(&msg,&oooi,lanode);

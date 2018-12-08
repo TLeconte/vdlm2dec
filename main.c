@@ -30,6 +30,7 @@
 #include <sys/param.h>
 
 #include "vdlm2.h"
+extern void build_label_filter(char *arg);
 
 int verbose = 1;
 int grndmess = 0;
@@ -63,7 +64,20 @@ static void usage(void)
 #ifdef WITH_RTL
 	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
 #endif
-	fprintf(stderr, " Frequencies(Mhz)\n");
+	fprintf(stderr, " Frequencies(Mhz)\n\n");
+
+	fprintf(stderr, " -i stid :\t\tlocal receiver station id (for json output)\n");
+	fprintf(stderr, " -v :\t\t\tverbose output\n");
+	fprintf(stderr, " -q :\t\t\tquiet output\n");
+	fprintf(stderr, " -J :\t\t\tjson output\n");
+	fprintf(stderr, " -R :\t\t\troute json output\n");
+	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
+	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
+	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
+	fprintf(stderr, " -b filter :\t\tfilter acars output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
+	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
+	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n\n");
+
 #ifdef WITH_RTL
 	fprintf(stderr,
 		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber.(MANDATORY parameter)\n");
@@ -75,16 +89,6 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
 #endif
-	fprintf(stderr, " -i stid :\t\tlocal receiver station id (for json output)\n");
-	fprintf(stderr, " -v :\t\t\tverbose output\n");
-	fprintf(stderr, " -q :\t\t\tquiet output\n");
-	fprintf(stderr, " -J :\t\t\tjson output\n");
-	fprintf(stderr, " -R :\t\t\troute json output\n");
-	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
-	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
-	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
-	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
-	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n");
 	exit(1);
 }
 
@@ -100,6 +104,7 @@ int main(int argc, char **argv)
 	int res=0;
 	struct sigaction sigact;
         char sys_hostname[HOST_NAME_MAX+1];
+        char *lblf=NULL;
 
         gethostname(sys_hostname, sizeof(sys_hostname));
 	sys_hostname[sizeof(sys_hostname) - 1] = '\0';
@@ -108,7 +113,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:JRj:i:GEUt:")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:JRj:i:GEUt:b:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -157,6 +162,9 @@ int main(int argc, char **argv)
 			free(idstation);
 			idstation = strdup(optarg);
 			break;
+		case 'b':
+                        lblf=optarg;
+			break;
 		case 'G':
 			grndmess=1;
 			break;
@@ -178,6 +186,8 @@ int main(int argc, char **argv)
 
 	if(jsonout || Rawaddr) 
 		initJson();
+
+        build_label_filter(lblf);
 
 #ifdef WITH_AIR
 	res=initAirspy(argv, optind, tparam);

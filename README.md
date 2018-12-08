@@ -18,6 +18,8 @@ It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://gith
 
  -i stid :		local receiver station id
 
+ -b filter:             filter output by label (ex: -b "H1:Q0" : only output messages  with label H1 or Q0"
+
  -v :			verbose output
 
  -q :			quiet output
