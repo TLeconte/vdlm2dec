@@ -44,26 +44,26 @@ extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
 static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode)
 {
-	fprintf(logfd, "ACARS\n");
+	vout( "ACARS\n");
 
 	if (msg->mode < 0x5d) {
-		fprintf(logfd, "Aircraft reg: %s ", msg->addr);
-		fprintf(logfd, "Flight id: %s", msg->fid);
-		fprintf(logfd, "\n");
+		vout( "Aircraft reg: %s ", msg->addr);
+		vout( "Flight id: %s", msg->fid);
+		vout( "\n");
 	}
-	fprintf(logfd, "Mode: %1c ", msg->mode);
-	fprintf(logfd, "Msg. label: %s\n", msg->label);
-	fprintf(logfd, "Block id: %c ", msg->bid);
-	fprintf(logfd, "Ack: %c\n", msg->ack);
-	fprintf(logfd, "Msg. no: %s\n", msg->no);
-	if(msg->txt[0]) fprintf(logfd, "Message :\n%s\n", msg->txt);
+	vout( "Mode: %1c ", msg->mode);
+	vout( "Msg. label: %s\n", msg->label);
+	vout( "Block id: %c ", msg->bid);
+	vout( "Ack: %c\n", msg->ack);
+	vout( "Msg. no: %s\n", msg->no);
+	if(msg->txt[0]) vout( "Message :\n%s\n", msg->txt);
 	if (msg->be == 0x17)
-		fprintf(logfd, "Block End\n");
+		vout( "Block End\n");
 
 #ifdef HAVE_LIBACARS
         if(lanode != NULL) {
                 la_vstring *vstr = la_proto_tree_format_text(NULL, lanode);
-                fprintf(logfd, "%s\n", vstr->str);
+                vout( "%s\n", vstr->str);
                 la_vstring_destroy(vstr, true);
         }
 #endif
@@ -122,7 +122,7 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi, la_proto_node *lanode)
 	}
 }
 
-void outacars(flight_t *fl,unsigned char *txt, int len)
+int outacars(flight_t *fl,unsigned char *txt, int len)
 {
 	acarsmsg_t msg;
 	oooi_t oooi;
@@ -137,8 +137,8 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 		txt[i] &= 0x7f;
 	}
 	if (crc) {
-		if(verbose) fprintf(logfd, "crc error\n");
-		return;
+		if(verbose) vout( "crc error\n");
+		return 0;
 	}
 
 	/* fill msg struct */
@@ -204,7 +204,7 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 	}
 	msg.be = txt[k];
 
-	if(label_filter(msg.label)==0) return ;
+	if(label_filter(msg.label)==0) return 0;
 
 #ifdef HAVE_LIBACARS
 	if (txt[0]) {
@@ -243,6 +243,6 @@ void outacars(flight_t *fl,unsigned char *txt, int len)
 	if(lanode) 
         	la_proto_tree_destroy(lanode);
 #endif
-
+	return 1;
 
 }

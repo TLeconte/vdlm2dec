@@ -35,13 +35,13 @@ extern unsigned int icaoaddr(unsigned char *p);
 
 static void getlatlon(unsigned char *p,  float *lat, float *lon)
 {
-short slat,slon;
+  short slat,slon;
 
-slat=(((short)p[0])<<8) | (unsigned short)(p[1] & 0xf0);
-slon=(((short)(p[1] & 0x0f))<< 12) | ((unsigned short)(p[2]) <<4);
+  slat=(((short)p[0])<<8) | (unsigned short)(p[1] & 0xf0);
+  slon=(((short)(p[1] & 0x0f))<< 12) | ((unsigned short)(p[2]) <<4);
 
-*lat=(float)slat/160.0; 
-*lon=(float)slon/160.0; 
+  *lat=(float)slat/160.0; 
+  *lon=(float)slon/160.0; 
 }
 
 void outprivategr(unsigned char *p, int len)
@@ -56,81 +56,81 @@ void outprivategr(unsigned char *p, int len)
 		case 0:
 			break;
 		case 0x01:
-			fprintf(logfd, "Connection management: ");
+			vout( "Connection management: ");
 			if (p[i + 2] & 1)
-				fprintf(logfd, "HO|");
+				vout( "HO|");
 			else if (p[i + 2] & 2)
-				fprintf(logfd, "LCR|");
+				vout( "LCR|");
 			else
-				fprintf(logfd, "LE|");
+				vout( "LE|");
 			if (p[i + 2] & 4)
-				fprintf(logfd, "GDA|");
+				vout( "GDA|");
 			else
-				fprintf(logfd, "VDA|");
+				vout( "VDA|");
 			if (p[i + 2] & 8)
-				fprintf(logfd, "ESS\n");
+				vout( "ESS\n");
 			else
-				fprintf(logfd, "ESN\n");
+				vout( "ESN\n");
 			break;
 		case 0x02:
-			fprintf(logfd, "Signal quality %01d\n", p[i + 2]);
+			vout( "Signal quality %01d\n", p[i + 2]);
 			break;
 		case 0x03:
-			fprintf(logfd, "XID sequencing %1d:%1d\n",
+			vout( "XID sequencing %1d:%1d\n",
 				p[i + 2] >> 4, p[i + 2] & 0x7);
 			break;
 		case 0x04:
-			fprintf(logfd, "Specific options: ");
+			vout( "Specific options: ");
 			if (p[i + 2] & 1)
-				fprintf(logfd, "GDA:");
+				vout( "GDA:");
 			else
-				fprintf(logfd, "VDA:");
+				vout( "VDA:");
 			if (p[i + 2] & 2)
-				fprintf(logfd, "ESS:");
+				vout( "ESS:");
 			else
-				fprintf(logfd, "ESN:");
+				vout( "ESN:");
 			if (p[i + 2] & 4)
-				fprintf(logfd, "IHS:");
+				vout( "IHS:");
 			else
-				fprintf(logfd, "IHN:");
+				vout( "IHN:");
 			if (p[i + 2] & 8)
-				fprintf(logfd, "BHS:");
+				vout( "BHS:");
 			else
-				fprintf(logfd, "BHN:");
+				vout( "BHN:");
 			if (p[i + 2] & 0x10)
-				fprintf(logfd, "BCS\n");
+				vout( "BCS\n");
 			else
-				fprintf(logfd, "BCN\n");
+				vout( "BCN\n");
 			break;
 		case 0x05:
-			fprintf(logfd, "Expedited subnetwork connection %02x\n",
+			vout( "Expedited subnetwork connection %02x\n",
 				p[i + 2]);
 			break;
 		case 0x06:
-			fprintf(logfd, "LCR cause %02x\n", p[i + 2]);
+			vout( "LCR cause %02x\n", p[i + 2]);
 			break;
 		case 0x81:
-			fprintf(logfd, "Modulation support %02x\n", p[i + 2]);
+			vout( "Modulation support %02x\n", p[i + 2]);
 			break;
 		case 0x82:{
 				unsigned int addr;
 				int n=0;
 
-				fprintf(logfd, "Acceptable alternative ground stations : ");
+				vout( "Acceptable alternative ground stations : ");
 
 				while(n<p[i+1]) {
 				 addr = icaoaddr(&(p[i+2+n]));
-				 fprintf(logfd,"%06X ", addr & 0xffffff);
+				 vout("%06X ", addr & 0xffffff);
 				 n+=4;
 				}
-				fprintf(logfd,"\n");
+				vout("\n");
 				break;
 			}
 		case 0x83:{
 				char da[5];
 				da[4]='\0';
 				memcpy(da,&(p[i+2]),4);
-				fprintf(logfd, "Destination airport %s\n", da);
+				vout( "Destination airport %s\n", da);
 				break;
 			}
 		case 0x84:{
@@ -139,28 +139,28 @@ void outprivategr(unsigned char *p, int len)
 
 				getlatlon(&(p[i + 2]),&lat,&lon);
 				alt = p[i + 5] * 1000;
-				fprintf(logfd, "Aircraft Position %4.1f %5.1f ", lat, lon );
+				vout( "Aircraft Position %4.1f %5.1f ", lat, lon );
 				if(alt==0)
-					fprintf(logfd, "alt: <=999\n");
+					vout( "alt: <=999\n");
 				else if(alt==255000)
-					fprintf(logfd, "alt: >=255000\n");
-					else fprintf(logfd, "alt: %d\n",alt);
+					vout( "alt: >=255000\n");
+					else vout( "alt: %d\n",alt);
 				break;
 			}
 		case 0xc0:{
 				unsigned int addr,mod,freq;
 				int n=0;
 
-				fprintf(logfd, "Frequency support : ");
+				vout( "Frequency support : ");
 
 				while(n<p[i+1]) {
 				 mod = (uint32_t) (p[i+2+n]&0xf0) >> 4;
 				 freq = ((uint32_t) (p[i+2+n]&0x0f) << 8) | ((uint32_t) (p[i + 3])) ;
 				 addr = icaoaddr(&(p[i+4+n]));
-				 fprintf(logfd,"%03.2f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
+				 vout("%03.2f (%01X) %06X ", (float)(freq+10000)/100.0,mod&0x0f,addr & 0xffffff);
 				 n+=6;
 				}
-				fprintf(logfd,"\n");
+				vout("\n");
 				break;
 			}
 		case 0xc1:{
@@ -169,14 +169,14 @@ void outprivategr(unsigned char *p, int len)
 
 				id[4]='\0';
 
-				fprintf(logfd, "Airport coverage : ");
+				vout( "Airport coverage : ");
 
 				while(n<p[i+1]) {
 				 memcpy(id,&(p[i+2+n]),4);
-				 fprintf(logfd,"%s ",id);
+				 vout("%s ",id);
 				 n+=4;
 				}
-				fprintf(logfd,"\n");
+				vout("\n");
 				break;
 			}
 		case 0xc3:{
@@ -184,7 +184,7 @@ void outprivategr(unsigned char *p, int len)
 				id[4]='\0';
 
 				memcpy(id,&(p[i+2]),4);
-				fprintf(logfd, "Nearest Airport : %s\n",id);
+				vout( "Nearest Airport : %s\n",id);
 				break;
 			}
 		case 0xc4:{
@@ -192,25 +192,25 @@ void outprivategr(unsigned char *p, int len)
 				
 				adm= ((uint32_t) (p[i + 2]) << 16) | ((uint32_t) (p[i + 3]) << 8) | ((uint32_t) (p[i + 4]));
 				ars= ((uint32_t) (p[i + 5]) << 16) | ((uint32_t) (p[i + 6]) << 8) | ((uint32_t) (p[i + 7]));
-				fprintf(logfd, "ATN router nets : ADM: %06X ARS : %06X\n",adm,ars);
+				vout( "ATN router nets : ADM: %06X ARS : %06X\n",adm,ars);
 				break;
 			}
 		case 0xc5:{
 				unsigned int mask;
 				mask= icaoaddr(&(p[i+2]));
 
-				fprintf(logfd, "Station system mask : %06X\n", mask & 0xffffff);
+				vout( "Station system mask : %06X\n", mask & 0xffffff);
 				break;
 			}
 		case 0xc8:{
 				float lat, lon;
 
 				getlatlon(&(p[i + 2]),&lat,&lon);
-				fprintf(logfd, "Station Position %4.1f %5.1f\n", lat, lon) ;
+				vout( "Station Position %4.1f %5.1f\n", lat, lon) ;
 				break;
 			}
 		default:
-			fprintf(logfd, "unknown private id %02x\n", p[i]);
+			vout( "unknown private id %02x\n", p[i]);
 			if (verbose > 1) {
 				dumpdata(&(p[i]), len + 2);
 			}
@@ -271,9 +271,11 @@ void addda(flight_t *fl, unsigned char *p, int len)
 
 }
 
-void outxid(flight_t *fl, unsigned char *p, int len)
+int outxid(flight_t *fl, unsigned char *p, int len)
 {
-	int i;
+	int i,dec;
+
+	dec=0;
 
 	i = 0;
 	do {
@@ -294,14 +296,17 @@ void outxid(flight_t *fl, unsigned char *p, int len)
 			addda(fl,&(p[i + 3]), glen);
 
 			i += 3 + glen;
+			dec=1;
 			break;
 		}
 		if (verbose > 1) {
-			fprintf(logfd, "unknown group %02x\n", p[i]);
+			vout( "unknown group %02x\n", p[i]);
 			dumpdata(&(p[i]), glen + 3);
 		}
 		i += 3 + glen;
 	} while (i < len);
+
+     return dec;
 }
 
 

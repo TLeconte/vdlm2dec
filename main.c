@@ -75,7 +75,7 @@ static void usage(void)
 	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
 	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
 	fprintf(stderr, " -b filter :\t\tfilter acars output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
-	fprintf(stderr, " -j addr:port :\t\tsend to addr:port UDP packets in json\n");
+	fprintf(stderr, " -j addr:port :\t\toutput UDP packet to addr:port\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n\n");
 
 #ifdef WITH_RTL
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 #endif
 		case 'j':
 			Rawaddr = optarg;
-			initOutput(Rawaddr);
+			initNetOutput(Rawaddr);
 			break;
 		case 'J':
 			jsonout = 1;
@@ -183,9 +183,6 @@ int main(int argc, char **argv)
 
 	if(jsonout) 
 		verbose=0;
-
-	if(jsonout || Rawaddr) 
-		initJson();
 
         build_label_filter(lblf);
 

@@ -83,6 +83,7 @@ typedef struct {
 } channel_t;
 
 #define JSONBUFLEN 50000
+#define OUTBUFLEN 50000
 
 extern unsigned int Fc;
 extern pthread_barrier_t Bar1, Bar2;
@@ -134,6 +135,6 @@ extern unsigned int reversebits(const unsigned int bits, const int n);
 extern unsigned short pppfcs16(unsigned char *cp, int len);
 extern int rs(unsigned char *data, int *eras_pos, int no_eras);
 
-extern int initOutput(char *Rawaddr);
-extern void initJson(void);
+extern int initNetOutput(char *Rawaddr);
+extern void vout(char *format, ...);
 extern void out(msgblk_t * blk, unsigned char *hdata, int l);

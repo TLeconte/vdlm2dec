@@ -18,6 +18,8 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
@@ -40,11 +42,11 @@ extern int outxid(flight_t *fl, unsigned char *p, int len);
 extern int outacars(flight_t *fl, unsigned char *txt, int len);
 
 cJSON *json_obj=NULL;
-
-static char *jsonbuf;
 static int sockfd=-1;
 
-int initOutput(char *Rawaddr)
+static char *outbuff=NULL,*ptroutbuff;
+
+int initNetOutput(char *Rawaddr)
 {
 	char *addr;
 	char *port;
@@ -106,15 +108,11 @@ int initOutput(char *Rawaddr)
 	return 0;
 }
 
-void initJson(void)
-{
-       jsonbuf=malloc(JSONBUFLEN);
-}
-
 static void outjson()
 {
 	int ok;
 	int lp;
+	char jsonbuf[JSONBUFLEN];
 
         ok = cJSON_PrintPreallocated(json_obj, jsonbuf, JSONBUFLEN, 0);
         cJSON_Delete(json_obj);
@@ -133,6 +131,7 @@ static void outjson()
         if (sockfd > 0 ) {
         	ok=write(sockfd, jsonbuf, lp+1);
 	}
+
 }
 
 static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgblk_t * blk)
@@ -158,7 +157,6 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgbl
         	cJSON_AddNumberToObject(json_obj, "fromaddr", faddr & 0xffffff);
         	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
 	}
-
 }
 
 
@@ -238,6 +236,20 @@ static void routejson(flight_t *fl,struct timeval tv)
  }
 }
 
+void vout(char *format, ...)
+{
+   va_list va;
+
+   if(outbuff==NULL) return;
+
+   va_start(va, format);
+
+   vsprintf(ptroutbuff,format,va);
+   ptroutbuff+=strlen(ptroutbuff);
+
+}
+
+
 void dumpdata(unsigned char *p, int len)
 {
 	int i, k;
@@ -245,16 +257,16 @@ void dumpdata(unsigned char *p, int len)
 	for (i = 0; i < len; i += 16) {
 		for (k = 0; k < 16; k++)
 			if (i + k < len)
-				fprintf(logfd, "%02hhx ", p[i + k]);
+				vout( "%02hhx ", p[i + k]);
 			else
-				fprintf(logfd, "   ");
-		fprintf(logfd, "   |");
+				vout( "   ");
+		vout( "   |");
 		for (k = 0; k < 16; k++)
 			if (i + k < len && p[i + k] >= ' ' && p[i + k] <= '~')
-				fprintf(logfd, "%c", p[i + k]);
+				vout( "%c", p[i + k]);
 			else
-				fprintf(logfd, ".");
-		fprintf(logfd, "|\n");
+				vout( ".");
+		vout( "|\n");
 	}
 }
 
@@ -297,26 +309,26 @@ static void outaddr(unsigned int addr)
 
 	switch(type) {
 		case 0:
-			fprintf(logfd, "T%1d:%06X ", type,addr);
+			vout( "T%1d:%06X ", type,addr);
 			break;
 		case 1:
-			fprintf(logfd, "Aircraft:%06X ", addr);
+			vout( "Aircraft:%06X ", addr);
 			break;
 		case 2:
 		case 3:
-			fprintf(logfd, "T%1d:%06X ", type,addr);
+			vout( "T%1d:%06X ", type,addr);
 			break;
 		case 4:
-			fprintf(logfd, "GroundA:%06X ", addr);
+			vout( "GroundA:%06X ", addr);
 			break;
 		case 5:
-			fprintf(logfd, "GroundD:%06X ", addr);
+			vout( "GroundD:%06X ", addr);
 			break;
 		case 6:
-			fprintf(logfd, "T%1d:%06X ", type,addr);
+			vout( "T%1d:%06X ", type,addr);
 			break;
 		case 7:
-			fprintf(logfd, "All ");
+			vout( "All ");
 			break;
 
 	}
@@ -339,21 +351,21 @@ static const char *Ufrm[2][32] = {
 static void outlinkctrl(unsigned char lc, int rep)
 {
 
-	fprintf(logfd, "Frame-");
+	vout( "Frame-");
 	if (lc & 1) {
 		if (lc & 2) {
-			fprintf(logfd, "U: ");
-			fprintf(logfd, "%s\n",
+			vout( "U: ");
+			vout( "%s\n",
 				Ufrm[rep][((lc >> 3) & 0x1c) |
 					  ((lc >> 2) & 0x3)]);
 		} else {
-			fprintf(logfd, "S: ");
-			fprintf(logfd, "Nr:%01d %s\n", (lc >> 5) & 0x7,
+			vout( "S: ");
+			vout( "Nr:%01d %s\n", (lc >> 5) & 0x7,
 				Sfrm[(lc >> 2) & 0x3]);
 		}
 	} else {
-		fprintf(logfd, "I: ");
-		fprintf(logfd, "Ns:%01d Nr:%01d\n", (lc >> 1) & 0x7,
+		vout( "I: ");
+		vout( "Ns:%01d Nr:%01d\n", (lc >> 1) & 0x7,
 			(lc >> 5) & 0x7);
 	}
 }
@@ -364,7 +376,7 @@ static void printdate(struct timeval tv)
 
         gmtime_r(&(tv.tv_sec), &tmp);
 
-        fprintf(logfd, "%02d/%02d/%04d %02d:%02d:%02d.%03d",
+        vout( "%02d/%02d/%04d %02d:%02d:%02d.%03d",
                 tmp.tm_mday, tmp.tm_mon + 1, tmp.tm_year + 1900,
                 tmp.tm_hour, tmp.tm_min, tmp.tm_sec,(int)tv.tv_usec/1000);
 }
@@ -384,45 +396,44 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	fromair=((faddr >> 24)==1);
 
 	if(!grndmess && !fromair) return;
-	if(!emptymess && l==13){
-			return;
-	}
+	if(!emptymess && l<=13)  return;
 
 	if(fromair)
 		fl=addFlight(faddr,blk->tv);
 
 	if(verbose) {
-        	fprintf(logfd, "\n[#%1d (F:%3.3f P:%+05.1f) ", blk->chn + 1,
-                        blk->Fr / 1000000.0, blk->ppm);
-        	printdate(blk->tv);
-        	fprintf(logfd, " --------------------------------\n");
 
-		fprintf(logfd, "%s from ", rep ? "Response" : "Command");
+		ptroutbuff=outbuff=malloc(OUTBUFLEN);
+
+        	vout("\n[#%1d (F:%3.3f P:%+05.1f) ", blk->chn + 1, blk->Fr / 1000000.0, blk->ppm);
+        	printdate(blk->tv);
+        	vout( " --------------------------------\n");
+
+		vout( "%s from ", rep ? "Response" : "Command");
 		outaddr(faddr);
-		fprintf(logfd, "(%s) to ", gnd ? "on ground" : "airborne");
+		vout( "(%s) to ", gnd ? "on ground" : "airborne");
 		outaddr(taddr);
-		fprintf(logfd, "\n");
+		vout( "\n");
 
 		outlinkctrl(hdata[9], rep);
 	}
 
-	if(jsonbuf && !routeout) 
+	if((jsonout || sockfd >0) && !routeout) 
 		buildjsonobj(faddr,taddr,fromair,blk);
 
 	dec=0;
+
 	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		outacars(fl,&(hdata[13]), l - 16);
-		dec=1;
+		dec|=outacars(fl,&(hdata[13]), l - 16);
 	}
 
 	if (l >= 14 && hdata[10] == 0x82) {
-		outxid(fl,&(hdata[11]), l - 14);
-		dec=1;
+		dec|=outxid(fl,&(hdata[11]), l - 14);
 	}
 
 	if(l>13 && dec==0 && undecmess) {
 		if(verbose) 
-			fprintf(logfd, "unknown data\n");
+			vout( "unknown data\n");
 		if(json_obj || verbose>1)
 			outundec(&(hdata[10]), l - 13);
 	}
@@ -438,6 +449,11 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	if(json_obj)
              outjson();
 
-	if(verbose)
-		fflush(logfd);
+	if(verbose) {
+		if(dec || undecmess) {
+			fwrite(outbuff,ptroutbuff-outbuff,1,logfd);
+			fflush(logfd);
+		}
+		free(outbuff);outbuff=NULL;
+	}
 }
