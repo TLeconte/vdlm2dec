@@ -138,6 +138,11 @@ comment the following lines in air.c :
 
 then compile as for the airspy (see above)
 
+#### For raspberry Pi and others ARM machines :
+
+The gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
+
+
 ## Frequency correction for rtl-sdr
 In message header, the P field give an estimation of frequency drift in ppm :
 

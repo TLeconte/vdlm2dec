@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.2)
 project (vdlm2dec C)
 
+add_compile_options(-Ofast -march=native )
+
 add_executable(vdlm2dec cJSON.c  crc.c  d8psk.c  label.c  main.c  outacars.c  out.c  outxid.c  rs.c  vdlm2.c  viterbi.c )
 
 find_library(LIBACARS acars)
