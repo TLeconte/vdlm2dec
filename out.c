@@ -1,4 +1,5 @@
 /*
+u
  *  Copyright (c) 2016 Thierry Leconte
  *
  *   
@@ -214,6 +215,7 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
         return(fl);
 }
 
+#if 1
 static void routejson(flight_t *fl,struct timeval tv)
 {
   if(fl==NULL)
@@ -228,6 +230,8 @@ static void routejson(flight_t *fl,struct timeval tv)
         double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
         cJSON_AddNumberToObject(json_obj, "timestamp", t);
         if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
+       	cJSON_AddNumberToObject(json_obj, "icao", fl->addr);
+        if(fl->reg[0]) cJSON_AddStringToObject(json_obj, "tail", fl->reg);
         cJSON_AddStringToObject(json_obj, "flight", fl->fid);
         cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
         cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
@@ -235,6 +239,21 @@ static void routejson(flight_t *fl,struct timeval tv)
         fl->rt=1;
  }
 }
+#else
+static void routejson(flight_t *fl,struct timeval tv)
+{
+  if(fl==NULL)
+        return;
+
+  if(fl->rt==0 && fl->reg[0]) {
+
+	printf("%06X,%s\n",fl->addr,fl->reg);
+	fflush(stdout);
+
+        fl->rt=1;
+ }
+}
+#endif
 
 void vout(char *format, ...)
 {

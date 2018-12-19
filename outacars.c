@@ -47,7 +47,7 @@ static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode
 	vout( "ACARS\n");
 
 	if (msg->mode < 0x5d) {
-		vout( "Aircraft reg: %s ", msg->addr);
+		vout( "Aircraft reg: %s ", msg->reg);
 		vout( "Flight id: %s", msg->fid);
 		vout( "\n");
 	}
@@ -92,7 +92,7 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi, la_proto_node *lanode)
 			cJSON_AddStringToObject(json_obj, "ack", convert_tmp);
 		}
 
-		cJSON_AddStringToObject(json_obj, "tail", msg->addr);
+		cJSON_AddStringToObject(json_obj, "tail", msg->reg);
 		if(msg->mode <= 'Z') {
 			cJSON_AddStringToObject(json_obj, "flight", msg->fid);
 			cJSON_AddStringToObject(json_obj, "msgno", msg->no);
@@ -149,11 +149,11 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 
 	for (i = 0, j = 0; i < 7; i++, k++) {
 		if (txt[k] != '.') {
-			msg.addr[j] = txt[k];
+			msg.reg[j] = txt[k];
 			j++;
 		}
 	}
-	msg.addr[j] = '\0';
+	msg.reg[j] = '\0';
 
 	/* ACK/NAK */
 	msg.ack = txt[k];
@@ -226,6 +226,7 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 
 	if(fl) {
 		strncpy(fl->fid,msg.fid,7);
+		strncpy(fl->reg,msg.reg,8);
 		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
                 if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
                 if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
