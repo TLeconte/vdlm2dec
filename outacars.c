@@ -42,6 +42,81 @@ extern cJSON *json_obj;
 extern int label_filter(char *lbl);
 extern int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi);
 
+const char *regpre1[] =
+    { "C", "B", "F", "D", "2", "I", "P", "M", "G", "Z", "" };
+const char *regpre2[] = {
+        "YA", "ZA", "7T", "C3", "D2", "VP", "V2", "LV", "LQ", "EK", "P4", "VH",
+            "OE", "4K", "C6",
+        "S2", "8P", "EW", "OO", "V3", "TY", "VQ", "A5", "CP", "T9", "E7", "A2",
+            "PP", "PR", "PT",
+        "PU", "V8", "LZ", "XT", "9U", "XU", "TJ", "D4", "TL", "TT", "CC", "HJ",
+            "HK", "D6", "TN",
+        "E5", "9Q", "TI", "TU", "9A", "CU", "5B", "OK", "OY", "J2", "J7", "HI",
+            "4W", "HC", "SU",
+        "YS", "3C", "E3", "ES", "ET", "DQ", "OH", "TR", "C5", "4L", "9G", "SX",
+            "J3", "TG", "3X",
+        "J5", "8R", "HH", "HR", "HA", "TF", "VT", "PK", "EP", "YI", "EI", "EJ",
+            "4X", "6Y", "ZJ", "JY", "Z6",
+        "UP", "5Y", "T3", "9K", "EX", "YL", "OD", "7P", "A8", "5A", "HB",
+            "LY", "LX", "Z3",
+        "5R", "7Q", "9M", "8Q", "TZ", "9H", "V7", "5T", "3B", "XA", "XB", "XC",
+            "V6", "ER", "3A",
+        "JU", "4O", "CN", "C9", "XY", "XZ", "V5", "C2", "9N", "PH", "PJ", "ZK",
+            "ZL", "ZM", "YN", "5U", "LN",
+        "AP", "SU", "E4", "HP", "P2", "ZP", "OB", "RP", "SP", "SN", "CR",
+            "CS", "A7", "YR",
+        "RA", "RF", "V4", "J6", "J8", "5W", "T7", "S9", "HZ", "6V", "6W", "YU", "S7",
+            "9L", "9V", "OM",
+        "S5", "H4", "6O", "ZS", "ZT", "ZU", "Z8", "EC", "4R", "ST", "PZ", "SE",
+            "HB", "YK", "EY",
+        "5H", "HS", "5V", "A3", "9Y", "TS", "TC", "EZ", "T2", "5X", "UR", "A6",
+            "4U", "CX",
+        "YJ", "VN", "7O", "9J", ""
+};
+const char *regpre3[] = { "A9C", "A4O", "9XR", "3DC", "" };
+
+static void fixreg(char *reg, char *add)
+{
+        char *p, *t;
+        int i;
+        for (p = add; *p == '.'; p++) ;
+
+        if (strlen(p) >= 4) {
+                t = NULL;
+                for (i = 0; regpre3[i][0] != 0; i++)
+                        if (memcmp(p, regpre3[i], 3) == 0) {
+                                t = p + 3;
+                                break;
+                        }
+                if (t == NULL) {
+                        for (i = 0; regpre2[i][0] != 0; i++)
+                                if (memcmp(p, regpre2[i], 2) == 0) {
+                                        t = p + 2;
+                                        break;
+                                }
+                }
+                if (t == NULL) {
+                        for (i = 0; regpre1[i][0] != 0; i++)
+                                if (*p == regpre1[i][0]) {
+                                        t = p + 1;
+                                        break;
+                                }
+                }
+                if (t && *t != '-') {
+                        memcpy(reg, p, t - p);
+                        reg[t - p] = 0;
+                        strncat(reg, "-", 7);
+                        strncat(reg, t, 7);
+                        reg[6] = 0;
+                        return;
+                }
+        }
+
+        strncpy(reg, p, 7);
+        reg[6] = 0;
+
+}
+
 static void printmsg(const acarsmsg_t * msg, oooi_t *oooi, la_proto_node *lanode)
 {
 	vout( "ACARS\n");
@@ -147,13 +222,8 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 	msg.mode = txt[k];
 	k++;
 
-	for (i = 0, j = 0; i < 7; i++, k++) {
-		if (txt[k] != '.') {
-			msg.reg[j] = txt[k];
-			j++;
-		}
-	}
-	msg.reg[j] = '\0';
+	fixreg(msg.reg,&(txt[k]));
+	k+=7;
 
 	/* ACK/NAK */
 	msg.ack = txt[k];
