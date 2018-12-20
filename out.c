@@ -215,7 +215,7 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
         return(fl);
 }
 
-#if 1
+#if 0
 static void routejson(flight_t *fl,struct timeval tv)
 {
   if(fl==NULL)
@@ -247,7 +247,7 @@ static void routejson(flight_t *fl,struct timeval tv)
 
   if(fl->rt==0 && fl->reg[0]) {
 
-	printf("%06X,%s\n",fl->addr,fl->reg);
+	printf("%06X,%s\n",0Xffffff & fl->addr,fl->reg);
 	fflush(stdout);
 
         fl->rt=1;

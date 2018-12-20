@@ -18,7 +18,7 @@
  */
 typedef struct {
 	char mode;
-	char reg[8];
+	char reg[9];
 	char ack;
 	char label[3];
 	char bid;
@@ -42,7 +42,7 @@ typedef struct flight_s flight_t;
 struct flight_s {
         flight_t *next;
         uint32_t addr;
-        char reg[8];
+        char reg[9];
         char fid[7];
         struct timeval ts,tl;
         int nbm;

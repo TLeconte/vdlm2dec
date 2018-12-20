@@ -77,9 +77,13 @@ const char *regpre3[] = { "A9C", "A4O", "9XR", "3DC", "" };
 
 static void fixreg(char *reg, char *add)
 {
+	char src[8];
         char *p, *t;
         int i;
-        for (p = add; *p == '.'; p++) ;
+
+	memcpy(src,add,7);src[7]=0;
+
+        for (p = src; *p == '.'; p++) ;
 
         if (strlen(p) >= 4) {
                 t = NULL;
@@ -105,15 +109,15 @@ static void fixreg(char *reg, char *add)
                 if (t && *t != '-') {
                         memcpy(reg, p, t - p);
                         reg[t - p] = 0;
-                        strncat(reg, "-", 7);
-                        strncat(reg, t, 7);
-                        reg[6] = 0;
+                        strncat(reg, "-", 8);
+                        strncat(reg, t, 8);
+                        reg[8] = 0;
                         return;
                 }
         }
 
-        strncpy(reg, p, 7);
-        reg[6] = 0;
+        strncpy(reg, p, 8);
+        reg[8] = 0;
 
 }
 
@@ -295,8 +299,8 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 	}
 
 	if(fl) {
-		strncpy(fl->fid,msg.fid,7);
-		strncpy(fl->reg,msg.reg,8);
+		strncpy(fl->fid,msg.fid,7);fl->fid[6]=0;
+		strncpy(fl->reg,msg.reg,8);fl->reg[8]=0;
 		if(oooi.da[0]) memcpy(fl->oooi.da,oooi.da,5);
                 if(oooi.sa[0]) memcpy(fl->oooi.sa,oooi.sa,5);
                 if(oooi.eta[0]) memcpy(fl->oooi.eta,oooi.eta,5);
