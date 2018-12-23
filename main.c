@@ -38,7 +38,8 @@ int emptymess = 0;
 int undecmess = 0;
 int jsonout = 0;
 int routeout = 0;
-int mdly=600;
+int regout = 0;
+int mdly=1800;
 
 char *Rawaddr = NULL;
 char *idstation = NULL ;
@@ -71,6 +72,7 @@ static void usage(void)
 	fprintf(stderr, " -q :\t\t\tquiet output\n");
 	fprintf(stderr, " -J :\t\t\tjson output\n");
 	fprintf(stderr, " -R :\t\t\troute json output\n");
+	fprintf(stderr, " -a :\t\t\taircraft registration csv output\n");
 	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
 	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
 	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
@@ -113,7 +115,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:JRj:i:GEUt:b:")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:l:JRj:i:GEUt:b:a:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -155,6 +157,10 @@ int main(int argc, char **argv)
 			routeout = 1;
 			jsonout = 1;
 			break;
+		case 'a':
+			regout = 1;
+			jsonout = 0;
+			break;
                 case 't':
                         mdly = atoi(optarg);
                         break;
@@ -181,7 +187,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if(jsonout) 
+	if(jsonout || regout) 
 		verbose=0;
 
         build_label_filter(lblf);

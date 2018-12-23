@@ -28,6 +28,8 @@ It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://gith
 
  -R :			route json format output
 
+ -a :			aircraft registration csv format output
+
  -l logfile :		output log (stderr by default)
 
  -j addr:port		send to addr:port UDP packets in json that could be read by acarsserv
@@ -81,6 +83,14 @@ Route JSON output (wait for a while before having an output):
     {"timestamp":1543674367.1799631,"flight":"BA066Q","depa":"EGKK","dsta":"GMMX"}
     {"timestamp":1543674485.4120231,"flight":"BA490U","depa":"EGLL","dsta":"LXGB"}
 
+Aircraft registration csv output:
+> 4D201F,9H-AEI
+    4CA2C9,EI-DEP
+    49514B,CS-TJK
+    3944F5,F-GRHV
+    3C6465,D-AICE
+    020017,CN-RNJ
+    400D8B,G-EZAA
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.

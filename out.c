@@ -37,6 +37,7 @@ u
 extern char *idstation;
 extern int jsonout;
 extern int routeout;
+extern int regout;
 extern int mdly;
 
 extern int outxid(flight_t *fl, unsigned char *p, int len);
@@ -215,7 +216,6 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
         return(fl);
 }
 
-#if 0
 static void routejson(flight_t *fl,struct timeval tv)
 {
   if(fl==NULL)
@@ -239,8 +239,8 @@ static void routejson(flight_t *fl,struct timeval tv)
         fl->rt=1;
  }
 }
-#else
-static void routejson(flight_t *fl,struct timeval tv)
+
+static void airreg(flight_t *fl,struct timeval tv)
 {
   if(fl==NULL)
         return;
@@ -253,7 +253,6 @@ static void routejson(flight_t *fl,struct timeval tv)
         fl->rt=1;
  }
 }
-#endif
 
 void vout(char *format, ...)
 {
@@ -462,8 +461,10 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 		json_obj=NULL;
 	}
 
-	if(fl)
-		routejson(fl,blk->tv);
+	if(fl) {
+		if(routeout) routejson(fl,blk->tv);
+		if(regout) airreg(fl,blk->tv);
+	}
 
 	if(json_obj)
              outjson();
