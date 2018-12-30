@@ -69,7 +69,8 @@ For airspy :
 
 
 JSON out :
-> ./vdlm2dec -J 136.725 136.775 136.875 136.975 
+> ./vdlm2dec -J -r 0 136.725 136.775 136.875 136.975
+
     {"timestamp":1543675373.6302309,"channel":2,"freq":136.875,"icao":4221787,"toaddr":2499139,"mode":"2","label":"10","block_id":"4","ack":"!","tail":"G-GATL","flight":"BA030T","msgno":"M16A","text":"MET01LPPR   "}
     {"timestamp":1543675375.78301,"channel":2,"freq":136.875,"icao":4221787,"toaddr":2499139,"mode":"2","label":"_d","block_id":"5","ack":"E","tail":"G-GATL","flight":"BA030T","msgno":"S57A"}
     {"timestamp":1543675376.9893639,"channel":2,"freq":136.875,"icao":5024073,"toaddr":2199779,"dsta":"GMAD"}
@@ -77,14 +78,17 @@ JSON out :
 
 
 Route JSON output (wait for a while before having an output):
-> ./vdlm2dec -R 136.725 136.775 136.875 136.975 
+> ./vdlm2dec -R -r 0 136.725 136.775 136.875 136.975
+
     {"timestamp":1543674072.0800021,"flight":"BA03TV","depa":"EGLL","dsta":"LFBO"}
     {"timestamp":1543674324.1648419,"flight":"BA2669","depa":"GMMX","dsta":"EGKK"}
     {"timestamp":1543674367.1799631,"flight":"BA066Q","depa":"EGKK","dsta":"GMMX"}
     {"timestamp":1543674485.4120231,"flight":"BA490U","depa":"EGLL","dsta":"LXGB"}
 
 Aircraft registration csv output:
-> 4D201F,9H-AEI
+> ./vdlm2dec -a -r 0 136.725 136.775 136.875 136.975
+    
+    4D201F,9H-AEI
     4CA2C9,EI-DEP
     49514B,CS-TJK
     3944F5,F-GRHV
@@ -104,27 +108,21 @@ It depends on some external libraries :
 ### Compile
 
 #### For rtl_sdr :
-> mkdir build
 
-> cd build
-
-> cmake .. -Drtl=ON
-
-> make
-
-> sudo make install
+    mkdir build
+    cd build
+    cmake .. -Drtl=ON
+    make
+    sudo make install
 
 
 #### For airspy :
-> mkdir build
 
-> cd build
-
-> cmake .. -Dairspy=ON
-
-> make
-
-> sudo make install
+    mkdir build
+    cd build
+    cmake .. -Dairspy=ON
+    make
+    sudo make install
 
 #### For airspy mini
 In vdlm2.h change :
