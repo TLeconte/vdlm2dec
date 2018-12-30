@@ -181,7 +181,7 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
                 fl->addr=addr;
                 fl->nbm=0;
                 fl->ts=tv;
-                fl->rt=0;
+                fl->rt=fl->gt=0;
                 fl->next=NULL;
         }
 
@@ -218,6 +218,8 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
 
 static void routejson(flight_t *fl,struct timeval tv)
 {
+  double t;
+
   if(fl==NULL)
         return;
 
@@ -227,17 +229,34 @@ static void routejson(flight_t *fl,struct timeval tv)
         if (json_obj == NULL)
                 return ;
 
-        double t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+        t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
         cJSON_AddNumberToObject(json_obj, "timestamp", t);
         if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
-       	cJSON_AddNumberToObject(json_obj, "icao", fl->addr);
-        if(fl->reg[0]) cJSON_AddStringToObject(json_obj, "tail", fl->reg);
         cJSON_AddStringToObject(json_obj, "flight", fl->fid);
         cJSON_AddStringToObject(json_obj, "depa", fl->oooi.sa);
         cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
 
         fl->rt=1;
  }
+
+ if(fl->gt==0 && fl->reg[0]) {
+	
+	if(json_obj==NULL) {
+
+        	json_obj = cJSON_CreateObject();
+        	if (json_obj == NULL)
+                	return ;
+
+        	t = (double)tv.tv_sec + ((double)tv.tv_usec)/1e6;
+        	cJSON_AddNumberToObject(json_obj, "timestamp", t);
+        	if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
+	}
+       	cJSON_AddNumberToObject(json_obj, "icao", fl->addr);
+        cJSON_AddStringToObject(json_obj, "tail", fl->reg);
+
+        fl->gt=1;
+ }
+
 }
 
 static void airreg(flight_t *fl,struct timeval tv)
@@ -245,12 +264,12 @@ static void airreg(flight_t *fl,struct timeval tv)
   if(fl==NULL)
         return;
 
-  if(fl->rt==0 && fl->reg[0]) {
+  if(fl->gt==0 && fl->reg[0]) {
 
 	printf("%06X,%s\n",0Xffffff & fl->addr,fl->reg);
 	fflush(stdout);
 
-        fl->rt=1;
+        fl->gt=1;
  }
 }
 
