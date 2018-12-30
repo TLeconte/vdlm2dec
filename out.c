@@ -240,6 +240,8 @@ static void routejson(flight_t *fl,struct timeval tv)
  }
 
  if(fl->gt==0 && fl->reg[0]) {
+
+	char hexicao[9];
 	
 	if(json_obj==NULL) {
 
@@ -251,7 +253,9 @@ static void routejson(flight_t *fl,struct timeval tv)
         	cJSON_AddNumberToObject(json_obj, "timestamp", t);
         	if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
 	}
-       	cJSON_AddNumberToObject(json_obj, "icao", fl->addr);
+
+	sprintf(hexicao,"%06X",fl->addr & 0xffffff);
+       	cJSON_AddStringToObject(json_obj, "icao", hexicao);
         cJSON_AddStringToObject(json_obj, "tail", fl->reg);
 
         fl->gt=1;
