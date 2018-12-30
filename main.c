@@ -71,8 +71,8 @@ static void usage(void)
 	fprintf(stderr, " -v :\t\t\tverbose output\n");
 	fprintf(stderr, " -q :\t\t\tquiet output\n");
 	fprintf(stderr, " -J :\t\t\tjson output\n");
-	fprintf(stderr, " -R :\t\t\troute json output\n");
-	fprintf(stderr, " -a :\t\t\taircraft registration csv output\n");
+	fprintf(stderr, " -R :\t\t\tflights & aircrafts registration json output\n");
+	fprintf(stderr, " -a :\t\t\taircrafts registration csv output\n");
 	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
 	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
 	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
