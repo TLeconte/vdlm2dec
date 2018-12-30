@@ -26,7 +26,7 @@ It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://gith
 
  -J :			json output
 
- -R :			route json format output
+ -R :			Flights & Aircrafts registration json format output
 
  -a :			aircraft registration csv format output
 
@@ -62,12 +62,6 @@ For airspy :
     Frame-I: Ns:1 Nr:0
     unknown data
     
-    [#2 (F:136.775 P:-6.6) 11/03/2018 15:52:29.357 --------------------------------
-    Command from Aircraft:461FA1 (airborne) to GroundD:280645 
-    Frame-I: Ns:4 Nr:7
-    unknown data
-
-
 JSON out :
 > ./vdlm2dec -J -r 0 136.725 136.775 136.875 136.975
 
@@ -77,13 +71,14 @@ JSON out :
     {"timestamp":1543675377.651469,"channel":3,"freq":136.975,"icao":4921892,"toaddr":1087690,"mode":"2","label":"H2","block_id":"5","ack":"!","tail":"HB-JXK","flight":"DS51QH","msgno":"M69E","text":"33297M517308091G    "}
 
 
-Route JSON output (wait for a while before having an output):
+Flights & Aircraft registration JSON output :
 > ./vdlm2dec -R -r 0 136.725 136.775 136.875 136.975
 
-    {"timestamp":1543674072.0800021,"flight":"BA03TV","depa":"EGLL","dsta":"LFBO"}
-    {"timestamp":1543674324.1648419,"flight":"BA2669","depa":"GMMX","dsta":"EGKK"}
-    {"timestamp":1543674367.1799631,"flight":"BA066Q","depa":"EGKK","dsta":"GMMX"}
-    {"timestamp":1543674485.4120231,"flight":"BA490U","depa":"EGLL","dsta":"LXGB"}
+    {"timestamp":1546187157.8686321,"icao":"3C656D","tail":"D-AIKM"}
+    {"timestamp":1546187160.7268431,"icao":"020095","tail":"CN-ROU"}
+    {"timestamp":1546187164.189714,"flight":"BA092F","depa":"EGKK","dsta":"LPFR","icao":"406B84","tail":"G-GATS"}
+    {"timestamp":1546187173.913542,"icao":"440395","tail":"OE-IZO"}
+    {"timestamp":1546187215.3877859,"flight":"CJ8483","depa":"EGLC","dsta":"LEPA"}
 
 Aircraft registration csv output:
 > ./vdlm2dec -a -r 0 136.725 136.775 136.875 136.975
@@ -91,9 +86,6 @@ Aircraft registration csv output:
     4D201F,9H-AEI
     4CA2C9,EI-DEP
     49514B,CS-TJK
-    3944F5,F-GRHV
-    3C6465,D-AICE
-    020017,CN-RNJ
     400D8B,G-EZAA
 
 ## Compilation
