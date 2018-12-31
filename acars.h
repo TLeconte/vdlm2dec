@@ -46,7 +46,7 @@ struct flight_s {
         char fid[7];
         struct timeval ts,tl;
         int nbm;
-        int rt;
+        int rt,gt;
         oooi_t oooi;
 };
 
