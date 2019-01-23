@@ -185,7 +185,7 @@ static int label_21(char *txt,oooi_t *oooi)
 static int label_26(char *txt,oooi_t *oooi)
 {
     char *p;
-    if(memcmp(txt,"VER/077",7)) return 0;
+    if(memcmp(txt,"VER/078",7)) return 0;
     p=strchr(txt,'\n'); if(p==NULL) return 0;
     p++;
     if(memcmp(p,"SCH/",4)) return 0;
