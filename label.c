@@ -236,7 +236,7 @@ static int label_44(char *txt,oooi_t *oooi)
     if(txt[28]!=',') return 0;
     memcpy(oooi->sa,&(txt[29]),4);
     if(txt[43]!=',') return 0;
-    memcpy(oooi->eta,&(txt[44]),4)		
+    memcpy(oooi->eta,&(txt[44]),4);		
     return 1;
 }
 static int label_45(char *txt,oooi_t *oooi)
