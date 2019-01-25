@@ -265,6 +265,13 @@ static int label_12(char *txt,oooi_t *oooi)
     memcpy(oooi->da,&(txt[5]),4);
     return 1;
 }
+static int label_13(char *txt,oooi_t *oooi)
+{
+    if(txt[4]!=',') return 0;
+    memcpy(oooi->sa,txt,4);
+    memcpy(oooi->da,&(txt[5]),4);
+    return 1;
+}
 static int label_15(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"FST01",5)) return 0;
@@ -347,6 +354,8 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 			ov=label_11(msg->txt,oooi);
 		if(msg->label[1]=='2') 
 			ov=label_12(msg->txt,oooi);
+		if(msg->label[1]=='3') 
+			ov=label_13(msg->txt,oooi);  
 		if(msg->label[1]=='5') 
 			ov=label_15(msg->txt,oooi);
 		if(msg->label[1]=='7') 
