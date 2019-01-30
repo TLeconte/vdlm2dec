@@ -185,7 +185,7 @@ static int label_21(char *txt,oooi_t *oooi)
 static int label_26(char *txt,oooi_t *oooi)
 {
     char *p;
-    if(memcmp(txt,"VER/077",7)) return 0;
+    if(memcmp(txt,"VER/078",7)) return 0;
     p=strchr(txt,'\n'); if(p==NULL) return 0;
     p++;
     if(memcmp(p,"SCH/",4)) return 0;
@@ -234,7 +234,9 @@ static int label_44(char *txt,oooi_t *oooi)
     if(txt[23]!=',') return 0;
     memcpy(oooi->da,&(txt[24]),4);
     if(txt[28]!=',') return 0;
-    memcpy(oooi->eta,&(txt[29]),4);
+    memcpy(oooi->sa,&(txt[29]),4);
+    if(txt[43]!=',') return 0;
+    memcpy(oooi->eta,&(txt[44]),4);		
     return 1;
 }
 static int label_45(char *txt,oooi_t *oooi)
@@ -259,6 +261,13 @@ static int label_11(char *txt,oooi_t *oooi)
     return 1;
 }
 static int label_12(char *txt,oooi_t *oooi)
+{
+    if(txt[4]!=',') return 0;
+    memcpy(oooi->sa,txt,4);
+    memcpy(oooi->da,&(txt[5]),4);
+    return 1;
+}
+static int label_13(char *txt,oooi_t *oooi)
 {
     if(txt[4]!=',') return 0;
     memcpy(oooi->sa,txt,4);
@@ -347,6 +356,8 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 			ov=label_11(msg->txt,oooi);
 		if(msg->label[1]=='2') 
 			ov=label_12(msg->txt,oooi);
+		if(msg->label[1]=='3') 
+			ov=label_13(msg->txt,oooi);  
 		if(msg->label[1]=='5') 
 			ov=label_15(msg->txt,oooi);
 		if(msg->label[1]=='7') 
