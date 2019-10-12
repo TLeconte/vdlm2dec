@@ -109,8 +109,7 @@ int main(int argc, char **argv)
         char *lblf=NULL;
 
         gethostname(sys_hostname, sizeof(sys_hostname));
-	sys_hostname[sizeof(sys_hostname) - 1] = '\0';
-        idstation = strdup(sys_hostname);
+        idstation = strndup(sys_hostname, 32);
 
 	nbch = 0;
 	logfd = stdout;
@@ -166,7 +165,7 @@ int main(int argc, char **argv)
                         break;
 		case 'i':
 			free(idstation);
-			idstation = strdup(optarg);
+			idstation = strndup(optarg, 32);
 			break;
 		case 'b':
                         lblf=optarg;
