@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
