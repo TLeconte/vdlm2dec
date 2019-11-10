@@ -159,8 +159,8 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int i
         	cJSON_AddNumberToObject(json_obj, "fromaddr", faddr & 0xffffff);
         	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
 	}
-        cJSON_AddNumberToObject(json_obj, "isresponse", isresponse);
-        cJSON_AddNumberToObject(json_obj, "isonground", isonground);
+        cJSON_AddNumberToObject(json_obj, "is_response", isresponse);
+        cJSON_AddNumberToObject(json_obj, "is_onground", isonground);
 }
 
 
