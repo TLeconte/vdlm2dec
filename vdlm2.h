@@ -22,6 +22,8 @@
 
 #define MAXNBCHANNELS 8
 
+#define MAX_ID_LEN 48
+
 #ifdef WITH_RTL
 #define SDRINRATE 2000000
 #define SDRCLK  500
