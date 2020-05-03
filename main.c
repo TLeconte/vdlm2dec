@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <string.h>
@@ -109,8 +110,7 @@ int main(int argc, char **argv)
         char *lblf=NULL;
 
         gethostname(sys_hostname, sizeof(sys_hostname));
-	sys_hostname[sizeof(sys_hostname) - 1] = '\0';
-        idstation = strdup(sys_hostname);
+        idstation = strndup(sys_hostname, MAX_ID_LEN);
 
 	nbch = 0;
 	logfd = stdout;
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
                         break;
 		case 'i':
 			free(idstation);
-			idstation = strdup(optarg);
+			idstation = strndup(optarg, MAX_ID_LEN);
 			break;
 		case 'b':
                         lblf=optarg;

@@ -136,7 +136,7 @@ static void outjson()
 
 }
 
-static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgblk_t * blk)
+static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int isresponse,int isonground,msgblk_t * blk)
 {
         char convert_tmp[8];
         double t = (double)blk->tv.tv_sec + ((double)blk->tv.tv_usec)/1e6;
@@ -159,6 +159,8 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,msgbl
         	cJSON_AddNumberToObject(json_obj, "fromaddr", faddr & 0xffffff);
         	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
 	}
+        cJSON_AddNumberToObject(json_obj, "is_response", isresponse);
+        cJSON_AddNumberToObject(json_obj, "is_onground", isonground);
 }
 
 
@@ -460,7 +462,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	}
 
 	if((jsonout || sockfd >0) && !routeout) 
-		buildjsonobj(faddr,taddr,fromair,blk);
+		buildjsonobj(faddr,taddr,fromair,rep,gnd,blk);
 
 	dec=0;
 
