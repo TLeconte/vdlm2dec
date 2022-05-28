@@ -20,6 +20,8 @@
 #include <complex.h>
 #include <stdint.h>
 
+#define VDLM2DEC_VERSION "2.0"
+
 #define MAXNBCHANNELS 8
 
 #define MAX_ID_LEN 48
