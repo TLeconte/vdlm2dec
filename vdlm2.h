@@ -24,8 +24,8 @@
 
 #define MAX_ID_LEN 48
 
-extern int SDRINRATE;
-extern int SDRCLK;
+extern unsigned int SDRINRATE;
+extern unsigned int SDRCLK;
 
 #define STEPRATE 25000
 

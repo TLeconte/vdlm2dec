@@ -126,7 +126,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return -1;
 	}
 
-	airspy_get_samplerates(device, &count, NULL);
+	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
 	for(i=0;i<count;i++) {
