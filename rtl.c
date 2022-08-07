@@ -275,6 +275,16 @@ static void in_callback(unsigned char *rtlinbuff, uint32_t nread, void *ctx)
 		return;
 	}
 
+#if defined(__arm__) || defined(__aarch64__)
+// Assume we need to use a bounce buffer to avoid performance problems on Pis running kernel 5.x and using zerocopy
+// miniscule performance hit when not using zero copy ... but most installs are gonna use zerocopy
+
+    unsigned char bounce[RTLINBUFSZ];
+    memcpy(bounce, rtlinbuff, RTLINBUFSZ);
+    rtlinbuff = bounce;
+
+#endif
+
 	pthread_barrier_wait(&Bar1);
 
 	for (i = 0; i < RTLINBUFSZ;) {
