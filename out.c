@@ -161,6 +161,13 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int i
 	}
         cJSON_AddNumberToObject(json_obj, "is_response", isresponse);
         cJSON_AddNumberToObject(json_obj, "is_onground", isonground);
+
+		cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
+		if (app_info) {
+			cJSON_AddStringToObject(app_info, "name", "vdlm2dec");
+			cJSON_AddStringToObject(app_info, "ver", VDLM2DEC_VERSION);
+		}
+
 }
 
 

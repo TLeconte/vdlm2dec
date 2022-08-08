@@ -61,7 +61,7 @@ pthread_barrier_t Bar1, Bar2;
 static void usage(void)
 {
 	fprintf(stderr,
-		"vdlm2dec V2.0 Copyright (c) 2016-2018 Thierry Leconte \n\n");
+		"vdlm2dec %s Copyright (c) 2016-2018 Thierry Leconte \n\n", VDLM2DEC_VERSION);
 	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
