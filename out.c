@@ -45,6 +45,7 @@ extern int outacars(flight_t *fl, unsigned char *txt, int len);
 
 cJSON *json_obj=NULL;
 static int sockfd=-1;
+static char *netOutputRawaddr = NULL;
 
 static char *outbuff=NULL,*ptroutbuff;
 
@@ -54,6 +55,8 @@ int initNetOutput(char *Rawaddr)
 	char *port;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
+
+	netOutputRawaddr = Rawaddr;
 
 		memset(&hints, 0, sizeof hints);
 		if (Rawaddr[0] == '[') {
@@ -110,6 +113,25 @@ int initNetOutput(char *Rawaddr)
 	return 0;
 }
 
+static int Netwrite(const void *buf, size_t count) {
+    if (!netOutputRawaddr) {
+        return -1;
+    }
+
+    int res;
+    res = write(sockfd, buf, count);
+    if (res == -1) {
+        perror("Netwrite");
+        close(sockfd);
+        // retry the write if the reconnect succeeds
+        if (initNetOutput(netOutputRawaddr) == 0) {
+            res = write(sockfd, buf, count);
+        }
+    }
+    return res;
+}
+
+
 static void outjson()
 {
 	int ok;
@@ -121,7 +143,7 @@ static void outjson()
 	json_obj=NULL;
 
 	if(!ok) return;
-	
+
 	lp=strlen(jsonbuf);
 	jsonbuf[lp]='\n'; jsonbuf[lp+1]='\0';
 
@@ -130,10 +152,9 @@ static void outjson()
                fflush(logfd);
         }
 
-        if (sockfd > 0 ) {
-        	ok=write(sockfd, jsonbuf, lp+1);
-	}
-
+    if (netOutputRawaddr) {
+        ok=Netwrite(jsonbuf, lp+1);
+    }
 }
 
 static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int isresponse,int isonground,msgblk_t * blk)
