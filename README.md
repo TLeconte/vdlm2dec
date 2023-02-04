@@ -6,13 +6,14 @@ It could decode up to 8 frequencies simultaneously ( but in the same 2Mhz range 
 It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://github.com/szpajder/libacars) library
 
 ## Usage
+
+For RTL-SDR:
+
 > vdlm2dec  [-l logfile]  [-g gain] [-i stid] [-v] [-q] [-J] [-l logfile] [-r rtldevicenumber]  Frequencies(Mhz)
 
- -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber (don't set it for airspy)
- 
- -g gain :		set preamp gain in tenth of db (ie -g 90 for +9db) (rtl-sdr)
+For Airspy R2 / Mini:
 
- -g gain :		set linearity gain (0 to 21).By default use maximum gain (airspy)
+> vdlm2dec  [-l logfile]  [-g gain] [-i stid] [-v] [-q] [-J] [-l logfile] [-k airspy_serial ] Frequencies(Mhz)
 
  -p ppm :		set rtl sdr ppm frequency (rtl-sdr only)
 
@@ -39,6 +40,18 @@ It decodes ARINC-622 ATS applications (ADS-C, CPDLC) via [libacars](https://gith
  -E :			output empty messages
 
  -U :			output undecoded messages
+
+for the RTLSDR device
+
+ -r rtldevicenumber :	decode from rtl dongle number rtldevicenumber
+ 
+ -g gain :		set preamp gain in tenth of db (ie -g 90 for +9db) (rtl-sdr)
+
+for the AirSpy device
+
+ -g gain :		set linearity gain (0 to 21).By default use maximum gain (airspy)
+
+ -k airspy_serial_number :            decode from airspy device with supplied serial number specified in hex, ie 0xA74068C82F591693
 
  
 ## Examples
@@ -115,28 +128,6 @@ It depends on some external libraries :
     cmake .. -Dairspy=ON
     make
     sudo make install
-
-#### For airspy mini
-In vdlm2.h change :
-
-    #ifdef WITH_AIR
-    #define SDRINRATE 5000000
-    #define SDRCLK  1250
-    #endif
-
-into 
-
-    #ifdef WITH_AIR
-    #define SDRINRATE 6000000
-    #define SDRCLK  1500
-    #endif
-
-comment the following lines in air.c :
-
-    //airspy_r820t_write(device, 10, 0xB0 | (15-j));
-    //airspy_r820t_write(device, 11, 0xE0 | (15-i));
-
-then compile as for the airspy (see above)
 
 #### For raspberry Pi and others ARM machines :
 

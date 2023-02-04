@@ -31,6 +31,9 @@ extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
 extern int gain;
 
+unsigned int SDRINRATE = 2000000;
+unsigned int SDRCLK = 500;
+
 unsigned int Fc;
 
 static rtlsdr_dev_t *dev = NULL;

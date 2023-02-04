@@ -52,6 +52,7 @@ int ppm = 0;
 #endif
 #ifdef WITH_AIR
 int gain = 21;
+uint64_t airspy_serial = 0;
 #endif
 
 int nbch;
@@ -65,6 +66,9 @@ static void usage(void)
 	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
+#endif
+#ifdef WITH_AIR
+	fprintf(stderr, " [-k airspy_serial_number]");
 #endif
 	fprintf(stderr, " Frequencies(Mhz)\n\n");
 
@@ -91,6 +95,8 @@ static void usage(void)
 #ifdef WITH_AIR
 	fprintf(stderr,
 		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
+	fprintf(stderr,
+		" -k serial :\t\tairspy serial number to bind to in hex, ie 0xA74068C82F2E3793\n");
 #endif
 	exit(1);
 }
@@ -115,7 +121,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:l:JRj:i:GEUt:b:a:")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUt:b:a:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -144,6 +150,9 @@ int main(int argc, char **argv)
 #ifdef WITH_AIR
 		case 'g':
 			gain = atoi(optarg);
+			break;
+		case 'k':
+			airspy_serial = strtoull(optarg, NULL, 16);
 			break;
 #endif
 		case 'j':

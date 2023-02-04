@@ -32,6 +32,10 @@ extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
 extern int gain;
 
+unsigned int SDRINRATE = 6000000;
+unsigned int SDRCLK = 1500;
+
+unsigned uint64_t airspy_serial;
 unsigned int Fc;
 
 static struct airspy_device* device = NULL;
@@ -42,21 +46,24 @@ static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,150207
 static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
 {
         unsigned int bw=maxF-minF+2*STEPRATE;
-        unsigned int off;
+        unsigned int off=0;
         int i,j;
 
-        for(i=7;i>=0;i--)
+        if(SDRINRATE == 5000000) {
+            /* This feature is specific to the R820T2 tuner in the Airspy R2 where the Mini has an R860. */
+            for(i=7;i>=0;i--)
                 if((r820t_hf[5]-r820t_lf[i])>=bw) break;
-        if(i<0) return 0;
+            if(i<0) return 0;
 
-        for(j=5;j>=0;j--)
+            for(j=5;j>=0;j--)
                 if((r820t_hf[j]-r820t_lf[i])<=bw) break;
-        j++;
+            j++;
 
-        off=(r820t_hf[j]+r820t_lf[i])/2-SDRINRATE/4;
+            off=(r820t_hf[j]+r820t_lf[i])/2-SDRINRATE/4;
 
-        airspy_r820t_write(device, 10, 0xB0 | (15-j));
-        airspy_r820t_write(device, 11, 0xE0 | (15-i));
+            airspy_r820t_write(device, 10, 0xB0 | (15-j));
+            airspy_r820t_write(device, 11, 0xE0 | (15-i));
+        }
 
         return(((maxF+minF)/2+off+STEPRATE/2)/STEPRATE*STEPRATE);
 }
@@ -98,8 +105,16 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		return 1;
 	}
 
-	result = airspy_open(&device);
-	if( result != AIRSPY_SUCCESS ) {
+        if( airspy_serial ) {
+	    if (verbose) {
+		fprintf(stderr, "Attempting to open airspy device 0x%016lx\n", airspy_serial);
+	    }
+	    result = airspy_open_sn(&device, airspy_serial);
+	} else {
+	    result = airspy_open(&device);
+	}
+        
+        if( result != AIRSPY_SUCCESS ) {
 		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
 		return -1;
 	}
@@ -114,8 +129,16 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	airspy_get_samplerates(device, &count, 0);
 	supported_samplerates = (uint32_t *) malloc(count * sizeof(uint32_t));
 	airspy_get_samplerates(device, supported_samplerates, count);
-	for(i=0;i<count;i++)
-		if(supported_samplerates[i]==SDRINRATE) break;
+	for(i=0;i<count;i++) {
+            if( (supported_samplerates[i] == 5000000) /* AirSpy R2 */
+                    || (supported_samplerates[i] == 6000000)) /* AirSpy Mini */
+            {
+                SDRINRATE = supported_samplerates[i];
+                SDRCLK = SDRINRATE/4000;
+                break;
+            }
+        }
+
 	if(i>=count) {
 		fprintf(stderr,"did not find needed sampling rate\n");
 		return -1;

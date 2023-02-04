@@ -26,17 +26,8 @@
 
 #define MAX_ID_LEN 48
 
-#ifdef WITH_RTL
-#define SDRINRATE 2000000
-#define SDRCLK  500
-//#define SDRINRATE 2500000
-//#define SDRCLK  625
-#endif
-
-#ifdef WITH_AIR
-#define SDRINRATE 5000000
-#define SDRCLK  1250
-#endif
+extern unsigned int SDRINRATE;
+extern unsigned int SDRCLK;
 
 #define STEPRATE 25000
 
