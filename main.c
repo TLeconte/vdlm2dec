@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUt:b:a:")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUt:b:a")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
