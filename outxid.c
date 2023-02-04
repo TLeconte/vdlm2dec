@@ -139,7 +139,7 @@ void outprivategr(unsigned char *p, int len)
 
 				getlatlon(&(p[i + 2]),&lat,&lon);
 				alt = p[i + 5] * 1000;
-				vout( "Aircraft Position %4.1f %5.1f ", lat, lon );
+				vout( "Aircraft Position %5.1f %6.1f ", lat, lon );
 				if(alt==0)
 					vout( "alt: <=999\n");
 				else if(alt==255000)
@@ -241,7 +241,7 @@ static void buildxidjson(unsigned char *p, int len)
 		if (p[i] == 0x84) {
 			getlatlon(&(p[i + 2]),&lat,&lon);
 			alt = p[i + 5] * 1000;
-			pos=1;
+			if(lat!=0 || lon !=0)  pos=1;
 		}
 		i += 2 + slen;
 	} while (i < len);
@@ -249,9 +249,14 @@ static void buildxidjson(unsigned char *p, int len)
 	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
 
 	if(pos) {
-		cJSON_AddNumberToObject(json_obj, "lat", lat);
-		cJSON_AddNumberToObject(json_obj, "lon", lon);
-		cJSON_AddNumberToObject(json_obj, "alt", alt);
+                char convert_tmp[10];
+                snprintf(convert_tmp, sizeof(convert_tmp), "%3.1f", lat);
+                cJSON_AddRawToObject(json_obj, "lat", convert_tmp);
+                snprintf(convert_tmp, sizeof(convert_tmp), "%4.1f", lon);
+                cJSON_AddRawToObject(json_obj, "lon", convert_tmp);
+		cJSON_AddNumberToObject(json_obj, "epu", 6 );
+
+		if(alt) cJSON_AddNumberToObject(json_obj, "alt", alt);
 	}
 }
 

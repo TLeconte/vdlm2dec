@@ -1,5 +1,4 @@
 /*
-u
  *  Copyright (c) 2016 Thierry Leconte
  *
  *   
@@ -147,27 +146,29 @@ static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int i
         cJSON_AddNumberToObject(json_obj, "timestamp", t);
         if(idstation[0]) cJSON_AddStringToObject(json_obj, "station_id", idstation);
 
-        cJSON_AddNumberToObject(json_obj, "channel", blk->chn);
-
         snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", blk->Fr/1000000.0);
         cJSON_AddRawToObject(json_obj, "freq", convert_tmp);
 
 	if(fromair) {
+        	snprintf(convert_tmp, sizeof(convert_tmp), "%06X", faddr & 0xffffff);
+        	cJSON_AddStringToObject(json_obj, "hex", convert_tmp);
         	cJSON_AddNumberToObject(json_obj, "icao", faddr & 0xffffff);
         	cJSON_AddNumberToObject(json_obj, "toaddr", taddr & 0xffffff);
 	} else {
         	cJSON_AddNumberToObject(json_obj, "fromaddr", faddr & 0xffffff);
         	cJSON_AddNumberToObject(json_obj, "icao", taddr & 0xffffff);
+        	snprintf(convert_tmp, sizeof(convert_tmp), "%06X", taddr & 0xffffff);
+        	cJSON_AddStringToObject(json_obj, "hex", convert_tmp);
 	}
-        cJSON_AddNumberToObject(json_obj, "is_response", isresponse);
-        cJSON_AddNumberToObject(json_obj, "is_onground", isonground);
 
-		cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
-		if (app_info) {
-			cJSON_AddStringToObject(app_info, "name", "vdlm2dec");
-			cJSON_AddStringToObject(app_info, "ver", VDLM2DEC_VERSION);
-		}
+        if(isresponse) cJSON_AddNumberToObject(json_obj, "is_response", isresponse);
+        if(isonground) cJSON_AddNumberToObject(json_obj, "is_onground", isonground);
 
+	cJSON *app_info = cJSON_AddObjectToObject(json_obj, "app");
+	if (app_info) {
+		cJSON_AddStringToObject(app_info, "name", "vdlm2dec");
+		cJSON_AddStringToObject(app_info, "ver", VDLM2DEC_VERSION);
+	}
 }
 
 
@@ -447,6 +448,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 	if(!grndmess && !fromair) return;
 	if(!emptymess && l<=13)  return;
+	if(!undecmess && fromair && ( (faddr & 0xffffff) == 0 || (faddr & 0xffffff) == 0xffffff)) return;
 
 	if(fromair)
 		fl=addFlight(faddr,blk->tv);

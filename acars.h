@@ -36,6 +36,10 @@ typedef struct {
 	char gin[5];
 	char woff[5];
 	char won[5];
+	// not really oooi 
+	float lon,lat;
+	int epu;
+	int alt;
 } oooi_t;
 
 typedef struct flight_s flight_t;

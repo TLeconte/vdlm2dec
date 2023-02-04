@@ -38,6 +38,24 @@ int label_filter(char *lbl)
    return 0;
 }
 
+void convpos(char *txt,oooi_t *oooi)
+{
+  char tmp[10];
+
+  if(strlen(txt)<13) return ;
+  if(txt[0] != 'N' && txt[0] != 'S') return;
+  if(txt[6] != 'W' && txt[6] != 'E') return;
+
+  memcpy(tmp,&(txt[1]),5);tmp[5]=0;
+  oooi->lat=atof(tmp)/1000.0;
+  if(txt[0] == 'S') oooi->lat=-oooi->lat;
+  
+  memcpy(tmp,&(txt[7]),6);tmp[6]=0;
+  oooi->lon=atof(tmp)/1000.0;
+  if(txt[6] == 'W') oooi->lon=-oooi->lon;
+  oooi->epu=1;
+}
+
 static int label_q1(char *txt,oooi_t *oooi)
 {
     memcpy(oooi->sa,txt,4);
@@ -167,6 +185,7 @@ static int label_qt(char *txt,oooi_t *oooi)
     memcpy(oooi->gin,&(txt[12]),4);
     return 1;
 }
+
 static int label_20(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"RST",3)) return 0;
@@ -174,63 +193,16 @@ static int label_20(char *txt,oooi_t *oooi)
     memcpy(oooi->da,&(txt[26]),4);
     return 1;
 }
-static int label_21(char *txt,oooi_t *oooi)
-{
-    if(txt[6]!=',') return 0;
-    memcpy(oooi->sa,&(txt[7]),4);
-    if(txt[11]!=',') return 0;
-    memcpy(oooi->da,&(txt[12]),4);
-    return 1;
-}
-static int label_26(char *txt,oooi_t *oooi)
-{
-    char *p;
-    if(memcmp(txt,"VER/078",7)) return 0;
-    p=strchr(txt,'\n'); if(p==NULL) return 0;
-    p++;
-    if(memcmp(p,"SCH/",4)) return 0;
-    p=strchr(p+4,'/'); if(p==NULL) return 0;
-    memcpy(oooi->sa,p+1,4);
-    memcpy(oooi->da,p+6,4);
-    p=strchr(p,'\n'); if(p==NULL) return 1;
-    p++;
-    if(memcmp(p,"ETA/",4)) return 0;
-    memcpy(oooi->eta,p+4,4);
-    return 1;
-}
-static int label_2N(char *txt,oooi_t *oooi)
-{
-    if(memcmp(txt,"TKO01",5)) return 0;
-    if(txt[11]!='/') return 0;
-    memcpy(oooi->sa,&(txt[20]),4);
-    memcpy(oooi->da,&(txt[24]),4);
-    return 1;
-}
 static int label_2Z(char *txt,oooi_t *oooi)
 {
     memcpy(oooi->da,txt,4);
     return 1;
 }
-static int label_33(char *txt,oooi_t *oooi)
-{
-    if(txt[0]!=',') return 0;
-    if(txt[20]!=',') return 0;
-    memcpy(oooi->sa,&(txt[21]),4);
-    if(txt[25]!=',') return 0;
-    memcpy(oooi->da,&(txt[26]),4);
-    return 1;
-}
-static int label_39(char *txt,oooi_t *oooi)
-{
-    if(memcmp(txt,"GTA01",5)) return 0;
-    if(txt[15]!='/') return 0;
-    memcpy(oooi->sa,&(txt[24]),4);
-    memcpy(oooi->da,&(txt[28]),4);
-    return 1;
-}
 static int label_44(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"POS02",5)) return 0;
+    convpos(&(txt[6]),oooi);
+
     if(txt[23]!=',') return 0;
     memcpy(oooi->da,&(txt[24]),4);
     if(txt[28]!=',') return 0;
@@ -239,46 +211,27 @@ static int label_44(char *txt,oooi_t *oooi)
     memcpy(oooi->eta,&(txt[44]),4);		
     return 1;
 }
-static int label_45(char *txt,oooi_t *oooi)
-{
-    if(txt[0]!='A') return 0;
-    memcpy(oooi->da,&(txt[1]),4);
-    return 1;
-}
-static int label_10(char *txt,oooi_t *oooi)
-{
-    if(memcmp(txt,"ARR01",5)) return 0;
-    memcpy(oooi->da,&(txt[12]),4);
-    memcpy(oooi->eta,&(txt[16]),4);
-    return 1;
-}
-static int label_11(char *txt,oooi_t *oooi)
-{
-    if(memcmp(&(txt[13]),"/DS ",4)) return 0;
-    memcpy(oooi->da,&(txt[17]),4);
-    if(memcmp(&(txt[21]),"/ETA ",5)) return 0;
-    memcpy(oooi->eta,&(txt[26]),4);
-    return 1;
-}
-static int label_12(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->sa,txt,4);
-    memcpy(oooi->da,&(txt[5]),4);
-    return 1;
-}
-static int label_13(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->sa,txt,4);
-    memcpy(oooi->da,&(txt[5]),4);
-    return 1;
-}
 static int label_15(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"FST01",5)) return 0;
     memcpy(oooi->sa,&(txt[5]),4);
     memcpy(oooi->da,&(txt[9]),4);
+    convpos(&(txt[13]),oooi);
+    return 1;
+}
+static int label_H1(char *txt,oooi_t *oooi)
+{
+    if(memcmp(txt,"#M1BPOS",7) && memcmp(txt,"#M2BPOS",7)) return 0;
+    convpos(&(txt[7]),oooi);
+    return 1;
+}
+//02E04EDDLGCFVN49371E00318807553498M6153050
+static int label_H2(char *txt,oooi_t *oooi)
+{
+    if(memcmp(txt,"02E03",5) && memcmp(txt,"02E04",5)) return 0;
+    memcpy(oooi->sa,&(txt[5]),4);
+    memcpy(oooi->da,&(txt[9]),4);
+    convpos(&(txt[13]),oooi);
     return 1;
 }
 static int label_17(char *txt,oooi_t *oooi)
@@ -291,55 +244,6 @@ static int label_17(char *txt,oooi_t *oooi)
     memcpy(oooi->da,&(txt[14]),4);
     return 1;
 }
-static int label_1G(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->sa,txt,4);
-    memcpy(oooi->da,&(txt[5]),4);
-    return 1;
-}
-static int label_80(char *txt,oooi_t *oooi)
-{
-    if(memcmp(&(txt[6]),"/DEST/",5)) return 0;
-    memcpy(oooi->da,&(txt[12]),4);
-    return 1;
-}
-static int label_83(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->sa,txt,4);
-    memcpy(oooi->da,&(txt[5]),4);
-    return 1;
-}
-static int label_8D(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    if(txt[35]!=',') return 0;
-    memcpy(oooi->sa,&(txt[36]),4);
-    if(txt[40]!=',') return 0;
-    memcpy(oooi->da,&(txt[41]),4);
-    return 1;
-}
-static int label_8e(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->da,txt,4);
-    memcpy(oooi->eta,&(txt[5]),4);
-    return 1;
-}
-static int label_8s(char *txt,oooi_t *oooi)
-{
-    if(txt[4]!=',') return 0;
-    memcpy(oooi->da,txt,4);
-    memcpy(oooi->eta,&(txt[5]),4);
-    return 1;
-}
-static int label_b9(char *txt,oooi_t *oooi)
-{
-    if(txt[0]!='/') return 0;
-    memcpy(oooi->da,&(txt[1]),4);
-    return 1;
-}
 
 
 int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
@@ -350,64 +254,26 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 
   switch(msg->label[0]) {
 	case '1' :
-		if(msg->label[1]=='0') 
-			ov=label_10(msg->txt,oooi);
-		if(msg->label[1]=='1') 
-			ov=label_11(msg->txt,oooi);
-		if(msg->label[1]=='2') 
-			ov=label_12(msg->txt,oooi);
-		if(msg->label[1]=='3') 
-			ov=label_13(msg->txt,oooi);  
 		if(msg->label[1]=='5') 
 			ov=label_15(msg->txt,oooi);
 		if(msg->label[1]=='7') 
 			ov=label_17(msg->txt,oooi);
-		if(msg->label[1]=='G') 
-			ov=label_1G(msg->txt,oooi);
 		break;
 	case '2' :
 		if(msg->label[1]=='0') 
 			ov=label_20(msg->txt,oooi);
-		if(msg->label[1]=='1') 
-			ov=label_21(msg->txt,oooi);
-		if(msg->label[1]=='6') 
-			ov=label_26(msg->txt,oooi);
-		if(msg->label[1]=='N') 
-			ov=label_2N(msg->txt,oooi);
 		if(msg->label[1]=='Z') 
 			ov=label_2Z(msg->txt,oooi);
-		break;
-	case '3' :
-		if(msg->label[1]=='3') 
-			ov=label_33(msg->txt,oooi);
-		if(msg->label[1]=='9') 
-			ov=label_39(msg->txt,oooi);
 		break;
 	case '4' :
 		if(msg->label[1]=='4') 
 			ov=label_44(msg->txt,oooi);
-		if(msg->label[1]=='5') 
-			ov=label_45(msg->txt,oooi);
 		break;
-	case '8' :
-		if(msg->label[1]=='0') 
-			ov=label_80(msg->txt,oooi);
-		if(msg->label[1]=='3') 
-			ov=label_83(msg->txt,oooi);
-		if(msg->label[1]=='D') 
-			ov=label_8D(msg->txt,oooi);
-		if(msg->label[1]=='E') 
-			ov=label_8e(msg->txt,oooi);
-		if(msg->label[1]=='S') 
-			ov=label_8s(msg->txt,oooi);
-		break;
-	case 'B' :
-		if(msg->label[1]=='9') 
-			ov=label_b9(msg->txt,oooi);
-		break;
-	case 'R' :
-		if(msg->label[1]=='B') 
-			ov=label_26(msg->txt,oooi);
+	case 'H' :
+		if(msg->label[1]=='1') 
+			ov=label_H1(msg->txt,oooi);
+		if(msg->label[1]=='2') 
+			ov=label_H2(msg->txt,oooi);
 		break;
 	case 'Q' :
   		switch(msg->label[1]) {
@@ -436,3 +302,4 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 
   return ov;
 }
+

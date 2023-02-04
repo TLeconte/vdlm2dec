@@ -61,7 +61,7 @@ pthread_barrier_t Bar1, Bar2;
 static void usage(void)
 {
 	fprintf(stderr,
-		"vdlm2dec %s Copyright (c) 2016-2018 Thierry Leconte \n\n", VDLM2DEC_VERSION);
+		"vdlm2dec %s Copyright (c) 2016-2023 Thierry Leconte \n\n", VDLM2DEC_VERSION);
 	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
@@ -104,7 +104,7 @@ static void sighandler(int signum)
 int main(int argc, char **argv)
 {
 	int n,c;
-	int res=0;
+	int res=-1;
 	struct sigaction sigact;
         char sys_hostname[HOST_NAME_MAX+1];
         char *lblf=NULL;
@@ -197,7 +197,8 @@ int main(int argc, char **argv)
 #endif
 
 	if (res) {
-		fprintf(stderr, "Unable to init input\n");
+		fprintf(stderr, "Unable to init input\n\n");
+		usage();
 		exit(-1);
 	}
 

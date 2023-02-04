@@ -20,7 +20,7 @@
 #include <complex.h>
 #include <stdint.h>
 
-#define VDLM2DEC_VERSION "2.0"
+#define VDLM2DEC_VERSION "2.1"
 
 #define MAXNBCHANNELS 8
 

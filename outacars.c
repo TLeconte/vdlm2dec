@@ -198,6 +198,17 @@ static void addacarsjson(acarsmsg_t * msg,oooi_t *oooi, la_proto_node *lanode)
 			cJSON_AddStringToObject(json_obj, "wloff", oooi->woff);
 		if(oooi->won[0])
 			cJSON_AddStringToObject(json_obj, "wlin", oooi->won);
+		if(oooi->epu) {
+			convert_tmp[16];
+		        snprintf(convert_tmp, sizeof(convert_tmp), "%3.3f", oooi->lat);
+       		        cJSON_AddRawToObject(json_obj, "lat", convert_tmp);
+		        snprintf(convert_tmp, sizeof(convert_tmp), "%4.3f", oooi->lon);
+       		        cJSON_AddRawToObject(json_obj, "lon", convert_tmp);
+
+                	cJSON_AddNumberToObject(json_obj, "epu", oooi->epu);
+		}
+		if(oooi->alt)
+		        cJSON_AddNumberToObject(json_obj, "alt", oooi->alt);
 	}
 }
 
