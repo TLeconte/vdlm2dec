@@ -38,13 +38,13 @@ int label_filter(char *lbl)
    return 0;
 }
 
-void convpos(char *txt,oooi_t *oooi)
+static int convpos(char *txt,oooi_t *oooi)
 {
   char tmp[10];
 
-  if(strlen(txt)<13) return ;
-  if(txt[0] != 'N' && txt[0] != 'S') return;
-  if(txt[6] != 'W' && txt[6] != 'E') return;
+  if(strlen(txt)<13) return 0;
+  if(txt[0] != 'N' && txt[0] != 'S') return 0;
+  if(txt[6] != 'W' && txt[6] != 'E') return 0;
 
   memcpy(tmp,&(txt[1]),5);tmp[5]=0;
   oooi->lat=atof(tmp)/1000.0;
@@ -54,6 +54,7 @@ void convpos(char *txt,oooi_t *oooi)
   oooi->lon=atof(tmp)/1000.0;
   if(txt[6] == 'W') oooi->lon=-oooi->lon;
   oooi->epu=1;
+  return 1;
 }
 
 static int label_q1(char *txt,oooi_t *oooi)
@@ -201,7 +202,7 @@ static int label_2Z(char *txt,oooi_t *oooi)
 static int label_44(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"POS02",5)) return 0;
-    convpos(&(txt[6]),oooi);
+    if(convpos(&(txt[6]),oooi) == 0 ) return 0;
 
     if(txt[23]!=',') return 0;
     memcpy(oooi->da,&(txt[24]),4);
@@ -216,23 +217,17 @@ static int label_15(char *txt,oooi_t *oooi)
     if(memcmp(txt,"FST01",5)) return 0;
     memcpy(oooi->sa,&(txt[5]),4);
     memcpy(oooi->da,&(txt[9]),4);
-    convpos(&(txt[13]),oooi);
-    return 1;
+    return convpos(&(txt[13]),oooi);
+}
+static int label_16(char *txt,oooi_t *oooi)
+{
+    if(memcmp(txt,"POSA1",5)) return 0;
+    return convpos(&(txt[6]),oooi);
 }
 static int label_H1(char *txt,oooi_t *oooi)
 {
     if(memcmp(txt,"#M1BPOS",7) && memcmp(txt,"#M2BPOS",7)) return 0;
-    convpos(&(txt[7]),oooi);
-    return 1;
-}
-//02E04EDDLGCFVN49371E00318807553498M6153050
-static int label_H2(char *txt,oooi_t *oooi)
-{
-    if(memcmp(txt,"02E03",5) && memcmp(txt,"02E04",5)) return 0;
-    memcpy(oooi->sa,&(txt[5]),4);
-    memcpy(oooi->da,&(txt[9]),4);
-    convpos(&(txt[13]),oooi);
-    return 1;
+    return convpos(&(txt[7]),oooi);
 }
 static int label_17(char *txt,oooi_t *oooi)
 {
@@ -256,7 +251,9 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 	case '1' :
 		if(msg->label[1]=='5') 
 			ov=label_15(msg->txt,oooi);
-		if(msg->label[1]=='7') 
+		if(msg->label[1]=='6') 
+			ov=label_15(msg->txt,oooi);
+		if(msg->label[1]=='6') 
 			ov=label_17(msg->txt,oooi);
 		break;
 	case '2' :
@@ -272,8 +269,6 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 	case 'H' :
 		if(msg->label[1]=='1') 
 			ov=label_H1(msg->txt,oooi);
-		if(msg->label[1]=='2') 
-			ov=label_H2(msg->txt,oooi);
 		break;
 	case 'Q' :
   		switch(msg->label[1]) {
