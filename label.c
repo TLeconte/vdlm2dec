@@ -252,7 +252,7 @@ int DecodeLabel(acarsmsg_t *msg,oooi_t *oooi)
 		if(msg->label[1]=='5') 
 			ov=label_15(msg->txt,oooi);
 		if(msg->label[1]=='6') 
-			ov=label_15(msg->txt,oooi);
+			ov=label_16(msg->txt,oooi);
 		if(msg->label[1]=='6') 
 			ov=label_17(msg->txt,oooi);
 		break;
