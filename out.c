@@ -50,65 +50,68 @@ static char *outbuff=NULL,*ptroutbuff;
 
 int initNetOutput(char *Rawaddr)
 {
-	char *addr;
+	char *raddr,*addr;
 	char *port;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 
 	netOutputRawaddr = Rawaddr;
+        raddr=strdup(Rawaddr);
 
-		memset(&hints, 0, sizeof hints);
-		if (Rawaddr[0] == '[') {
-			hints.ai_family = AF_INET6;
-			addr = Rawaddr + 1;
-			port = strstr(addr, "]");
-			if (port == NULL) {
-				fprintf(stderr, "Invalid IPV6 address\n");
-				return -1;
-			}
+	memset(&hints, 0, sizeof hints);
+	if (raddr[0] == '[') {
+		hints.ai_family = AF_INET6;
+		addr = raddr + 1;
+		port = strstr(addr, "]");
+		if (port == NULL) {
+			fprintf(stderr, "Invalid IPV6 address\n");
+			return -1;
+		}
+		*port = 0;
+		port++;
+		if (*port != ':')
+			port = "5555";
+		else
+			port++;
+	} else {
+		hints.ai_family = AF_UNSPEC;
+		addr = raddr;
+		port = strstr(addr, ":");
+		if (port == NULL)
+			port = "5555";
+		else {
 			*port = 0;
 			port++;
-			if (*port != ':')
-				port = "5555";
-			else
-				port++;
-		} else {
-			hints.ai_family = AF_UNSPEC;
-			addr = Rawaddr;
-			port = strstr(addr, ":");
-			if (port == NULL)
-				port = "5555";
-			else {
-				*port = 0;
-				port++;
-			}
+		}
+	}
+
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
+		fprintf(stderr, "Invalid/unknown address %s\n", addr);
+		return -1;
+	}
+
+	for (p = servinfo; p != NULL; p = p->ai_next) {
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+		continue;
 		}
 
-		hints.ai_socktype = SOCK_DGRAM;
-
-		if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
-			fprintf(stderr, "Invalid/unknown address %s\n", addr);
-			return -1;
-		}
-
-		for (p = servinfo; p != NULL; p = p->ai_next) {
-			if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			close(sockfd);
 			continue;
-			}
-
-			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
-				continue;
-			}
-			break;
 		}
-		if (p == NULL) {
-			fprintf(stderr, "failed to connect\n");
-			return -1;
-		}
+		break;
+	}
 
-		freeaddrinfo(servinfo);
+	free(raddr);
+	freeaddrinfo(servinfo);
 	
+	if (p == NULL) {
+		fprintf(stderr, "failed to connect\n");
+		return -1;
+	}
+
 	return 0;
 }
 
