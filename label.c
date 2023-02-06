@@ -42,7 +42,6 @@ static int convpos(char *txt,oooi_t *oooi)
 {
   char tmp[10];
 
-  if(strlen(txt)<13) return 0;
   if(txt[0] != 'N' && txt[0] != 'S') return 0;
   if(txt[6] != 'W' && txt[6] != 'E') return 0;
 
@@ -59,6 +58,7 @@ static int convpos(char *txt,oooi_t *oooi)
 
 static int label_q1(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<28) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gout,&(txt[4]),4);
     memcpy(oooi->woff,&(txt[8]),4);
@@ -69,36 +69,42 @@ static int label_q1(char *txt,oooi_t *oooi)
 }
 static int label_q2(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->eta,&(txt[4]),4);
     return 1;
 }
 static int label_qa(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gout,&(txt[4]),4);
     return 1;
 }
 static int label_qb(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->woff,&(txt[4]),4);
     return 1;
 }
 static int label_qc(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->won,&(txt[4]),4);
     return 1;
 }
 static int label_qd(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gin,&(txt[4]),4);
     return 1;
 }
 static int label_qe(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gout,&(txt[4]),4);
     memcpy(oooi->da,&(txt[8]),4);
@@ -106,6 +112,7 @@ static int label_qe(char *txt,oooi_t *oooi)
 }
 static int label_qf(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->woff,&(txt[4]),4);
     memcpy(oooi->da,&(txt[8]),4);
@@ -113,6 +120,7 @@ static int label_qf(char *txt,oooi_t *oooi)
 }
 static int label_qg(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gout,&(txt[4]),4);
     memcpy(oooi->gin,&(txt[8]),4);
@@ -120,12 +128,14 @@ static int label_qg(char *txt,oooi_t *oooi)
 }
 static int label_qh(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<8) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->gout,&(txt[4]),4);
     return 1;
 }
 static int label_qk(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->won,&(txt[4]),4);
     memcpy(oooi->da,&(txt[8]),4);
@@ -133,6 +143,7 @@ static int label_qk(char *txt,oooi_t *oooi)
 }
 static int label_ql(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<17) return 0;
     memcpy(oooi->da,txt,4);
     memcpy(oooi->gin,&(txt[8]),4);
     memcpy(oooi->sa,&(txt[13]),4);
@@ -140,18 +151,21 @@ static int label_ql(char *txt,oooi_t *oooi)
 }
 static int label_qm(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->da,txt,4);
     memcpy(oooi->sa,&(txt[8]),4);
     return 1;
 }
 static int label_qn(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->eta,&(txt[8]),4);
     return 1;
 }
 static int label_qp(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->gout,&(txt[8]),4);
@@ -159,6 +173,7 @@ static int label_qp(char *txt,oooi_t *oooi)
 }
 static int label_qq(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->woff,&(txt[8]),4);
@@ -166,6 +181,7 @@ static int label_qq(char *txt,oooi_t *oooi)
 }
 static int label_qr(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->won,&(txt[8]),4);
@@ -173,6 +189,7 @@ static int label_qr(char *txt,oooi_t *oooi)
 }
 static int label_qs(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<12) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->gin,&(txt[8]),4);
@@ -180,6 +197,7 @@ static int label_qs(char *txt,oooi_t *oooi)
 }
 static int label_qt(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<16) return 0;
     memcpy(oooi->sa,txt,4);
     memcpy(oooi->da,&(txt[4]),4);
     memcpy(oooi->gout,&(txt[8]),4);
@@ -189,6 +207,7 @@ static int label_qt(char *txt,oooi_t *oooi)
 
 static int label_20(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<30) return 0;
     if(memcmp(txt,"RST",3)) return 0;
     memcpy(oooi->sa,&(txt[22]),4);
     memcpy(oooi->da,&(txt[26]),4);
@@ -196,12 +215,14 @@ static int label_20(char *txt,oooi_t *oooi)
 }
 static int label_2Z(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<4) return 0;
     memcpy(oooi->da,txt,4);
     return 1;
 }
 static int label_44(char *txt,oooi_t *oooi)
 {
-    if(memcmp(txt,"POS02",5)) return 0;
+    if(strlen(txt)<48) return 0;
+    if(memcmp(txt,"POS0",4) || txt[5]!=',' ) return 0;
     if(convpos(&(txt[6]),oooi) == 0 ) return 0;
 
     if(txt[23]!=',') return 0;
@@ -214,6 +235,7 @@ static int label_44(char *txt,oooi_t *oooi)
 }
 static int label_15(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<26) return 0;
     if(memcmp(txt,"FST01",5)) return 0;
     memcpy(oooi->sa,&(txt[5]),4);
     memcpy(oooi->da,&(txt[9]),4);
@@ -221,16 +243,19 @@ static int label_15(char *txt,oooi_t *oooi)
 }
 static int label_16(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<19) return 0;
     if(memcmp(txt,"POSA1",5)) return 0;
     return convpos(&(txt[6]),oooi);
 }
 static int label_H1(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<20) return 0;
     if(memcmp(txt,"#M1BPOS",7) && memcmp(txt,"#M2BPOS",7)) return 0;
     return convpos(&(txt[7]),oooi);
 }
 static int label_17(char *txt,oooi_t *oooi)
 {
+    if(strlen(txt)<18) return 0;
     if(memcmp(txt,"ETA ",4)) return 0;
     memcpy(oooi->eta,&(txt[4]),4);
     if(txt[8]!=',') return 0;
