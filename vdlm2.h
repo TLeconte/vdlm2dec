@@ -91,7 +91,6 @@ extern complex float Cbuff[RTLINBUFSZ / 2];
 extern float Cbuff[RTLINBUFSZ / 2];
 #endif
 
-extern int verbose;
 extern int grndmess;
 extern int emptymess;
 extern int undecmess;

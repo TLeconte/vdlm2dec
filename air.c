@@ -32,6 +32,7 @@ extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
 extern int gain;
 extern uint64_t airspy_serial;
+extern int verbose;
 
 unsigned int SDRINRATE = 6000000;
 unsigned int SDRCLK = 1500;
@@ -106,7 +107,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	}
 
         if( airspy_serial ) {
-	    if (verbose) {
+	    if (verbose>1) {
 		fprintf(stderr, "Attempting to open airspy device 0x%016lx\n", airspy_serial);
 	    }
 	    result = airspy_open_sn(&device, airspy_serial);
@@ -174,7 +175,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		airspy_close(device);
 		return -1;
 	}
-	if (verbose)
+	if (verbose>1)
 		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
 	/* compute mixers osc. */

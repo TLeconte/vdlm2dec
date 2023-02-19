@@ -29,6 +29,8 @@
 #define PPPINITFCS16    0xffff	/* Initial FCS value */
 #define PPPGOODFCS16    0xf0b8	/* Good final FCS value */
 
+extern int verbose;
+
 static pthread_mutex_t blkmtx;
 static pthread_cond_t blkwcd;
 static msgblk_t *blkq_s = NULL;

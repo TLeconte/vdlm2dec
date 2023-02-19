@@ -31,6 +31,8 @@ extern int nbch;
 extern pthread_barrier_t Bar1, Bar2;
 extern int gain;
 
+extern int verbose;
+
 unsigned int SDRINRATE = 2000000;
 unsigned int SDRCLK = 500;
 
@@ -52,20 +54,20 @@ int verbose_device_search(char *s)
 		fprintf(stderr, "No supported devices found.\n");
 		return -1;
 	}
-	if (verbose)
+	if (verbose>1)
 		fprintf(stderr, "Found %d device(s):\n", device_count);
 	for (i = 0; i < device_count; i++) {
 		rtlsdr_get_device_usb_strings(i, vendor, product, serial);
-		if (verbose)
+		if (verbose>1)
 			fprintf(stderr, "  %d:  %s, %s, SN: %s\n", i, vendor,
 				product, serial);
 	}
-	if (verbose)
+	if (verbose>1)
 		fprintf(stderr, "\n");
 	/* does string look like raw id number */
 	device = (int)strtol(s, &s2, 0);
 	if (s2[0] == '\0' && device >= 0 && device < device_count) {
-		if (verbose)
+		if (verbose>1)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -78,7 +80,7 @@ int verbose_device_search(char *s)
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (verbose>1)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -91,7 +93,7 @@ int verbose_device_search(char *s)
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (verbose>1)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -108,7 +110,7 @@ int verbose_device_search(char *s)
 			continue;
 		}
 		device = i;
-		if (verbose)
+		if (verbose>1)
 			fprintf(stderr, "Using device %d: %s\n",
 				device,
 				rtlsdr_get_device_name((uint32_t) device));
@@ -176,7 +178,7 @@ int nearest_gain(int target_gain)
 		}
 	}
 	free(gains);
-	if (verbose)
+	if (verbose>1)
 		fprintf(stderr, "Tuner gain : %f\n", (float)close_gain / 10.0);
 	return close_gain;
 }
@@ -244,7 +246,7 @@ int initRtl(char **argv, int optind, thread_param_t * param)
 		param[n].Fo = param[n].Fr - Fc;
 	}
 
-	if (verbose)
+	if (verbose>1)
 		fprintf(stderr, "Set center freq. to %dHz\n", (int)Fc);
 
 	r = rtlsdr_set_center_freq(dev, Fc);

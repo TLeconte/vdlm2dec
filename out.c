@@ -38,6 +38,7 @@ extern int jsonout;
 extern int routeout;
 extern int regout;
 extern int mdly;
+extern int verbose;
 
 extern int outxid(flight_t *fl, unsigned char *p, int len);
 extern int outacars(flight_t *fl, unsigned char *txt, int len);

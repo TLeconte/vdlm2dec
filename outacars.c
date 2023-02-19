@@ -227,7 +227,7 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 		txt[i] &= 0x7f;
 	}
 	if (crc) {
-		if(verbose) vout( "crc error\n");
+		if(verbose>1) vout( "crc error\n");
 		return 0;
 	}
 
