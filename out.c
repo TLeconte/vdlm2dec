@@ -37,15 +37,15 @@ extern char *idstation;
 extern int jsonout;
 extern int routeout;
 extern int regout;
-extern int mdly;
 extern int verbose;
+extern char *netOutputRawaddr;
 
 extern int outxid(flight_t *fl, unsigned char *p, int len);
 extern int outacars(flight_t *fl, unsigned char *txt, int len);
 
 cJSON *json_obj=NULL;
 static int sockfd=-1;
-static char *netOutputRawaddr = NULL;
+static const int mdly=1800;
 
 static char *outbuff=NULL,*ptroutbuff;
 
@@ -99,7 +99,9 @@ int initNetOutput(char *Rawaddr)
 		}
 
 		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+			if(verbose > 1) fprintf(stderr, "failed to connect\n");
 			close(sockfd);
+			sockfd=-1;
 			continue;
 		}
 		break;
@@ -108,8 +110,7 @@ int initNetOutput(char *Rawaddr)
 	free(raddr);
 	freeaddrinfo(servinfo);
 	
-	if (p == NULL) {
-		fprintf(stderr, "failed to connect\n");
+	if (sockfd == -1 ) {
 		return -1;
 	}
 
@@ -117,19 +118,21 @@ int initNetOutput(char *Rawaddr)
 }
 
 static int Netwrite(const void *buf, size_t count) {
-    if (!netOutputRawaddr) {
-        return -1;
-    }
-
     int res;
+
+
+    if(sockfd == -1) {
+    	if (!netOutputRawaddr) {
+        	return -1;
+    	}
+        initNetOutput(netOutputRawaddr);
+    }
+    if(sockfd == -1) return -1;
+
     res = write(sockfd, buf, count);
-    if (res == -1) {
-        perror("Netwrite");
+    if (res != count) {
         close(sockfd);
-        // retry the write if the reconnect succeeds
-        if (initNetOutput(netOutputRawaddr) == 0) {
-            res = write(sockfd, buf, count);
-        }
+	sockfd = -1;
     }
     return res;
 }
@@ -495,7 +498,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 		outlinkctrl(hdata[9], rep);
 	}
 
-	if((jsonout || sockfd >0) && !routeout) 
+	if((jsonout || netOutputRawaddr) && !routeout)
 		buildjsonobj(faddr,taddr,fromair,rep,gnd,blk);
 
 	dec=0;

@@ -40,9 +40,9 @@ int undecmess = 0;
 int jsonout = 0;
 int routeout = 0;
 int regout = 0;
-int mdly=1800;
 
-char *Rawaddr = NULL;
+char *netOutputRawaddr = NULL;
+
 char *idstation = NULL ;
 FILE *logfd;
 
@@ -77,7 +77,7 @@ static void usage(void)
 	fprintf(stderr, " -q :\t\t\tquiet output\n");
 	fprintf(stderr, " -J :\t\t\tjson output\n");
 	fprintf(stderr, " -R :\t\t\tflights & aircrafts registration json output\n");
-	fprintf(stderr, " -a :\t\t\taircrafts registration csv output\n");
+	fprintf(stderr, " -a :\t\t\taircrafts registration csv output to stdout\n");
 	fprintf(stderr, " -G :\t\t\toutput messages from ground station\n");
 	fprintf(stderr, " -E :\t\t\toutput empty messages\n");
 	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUt:b:a")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUb:a")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -156,8 +156,7 @@ int main(int argc, char **argv)
 			break;
 #endif
 		case 'j':
-			Rawaddr = optarg;
-			initNetOutput(Rawaddr);
+			netOutputRawaddr = optarg;
 			break;
 		case 'J':
 			jsonout = 1;
@@ -170,9 +169,6 @@ int main(int argc, char **argv)
 			regout = 1;
 			jsonout = 0;
 			break;
-                case 't':
-                        mdly = atoi(optarg);
-                        break;
 		case 'i':
 			free(idstation);
 			idstation = strndup(optarg, MAX_ID_LEN);
@@ -217,6 +213,9 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sigact, NULL);
 	sigaction(SIGTERM, &sigact, NULL);
 	sigaction(SIGQUIT, &sigact, NULL);
+
+        sigact.sa_handler = SIG_IGN;
+        sigaction(SIGPIPE, &sigact, NULL);
 
 	pthread_barrier_init(&Bar1, NULL, nbch + 1);
 	pthread_barrier_init(&Bar2, NULL, nbch + 1);
