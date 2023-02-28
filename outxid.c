@@ -223,44 +223,24 @@ void outprivategr(unsigned char *p, int len)
 	fflush(logfd);
 }
 
-static void buildxidjson(unsigned char *p, int len)
+static void buildxidjson(flight_t *fl)
 {
-	int i;
-	char da[5];
-	int alt=0, pos=0;
-	float lat=0, lon=0;
 
-	i = 0;
-	da[0]=da[4]='\0';
-	do {
-		short slen = p[i + 1];
+	if(fl->oooi.da[0]) cJSON_AddStringToObject(json_obj, "dsta", fl->oooi.da);
 
-		if (p[i] == 0x83) {
-			memcpy(da,&(p[i+2]),4);
-		}
-		if (p[i] == 0x84) {
-			getlatlon(&(p[i + 2]),&lat,&lon);
-			alt = p[i + 5] * 1000;
-			if(lat!=0 || lon !=0)  pos=1;
-		}
-		i += 2 + slen;
-	} while (i < len);
-
-	if(da[0]) cJSON_AddStringToObject(json_obj, "dsta", da);
-
-	if(pos) {
+	if(fl->oooi.epu) {
                 char convert_tmp[10];
-                snprintf(convert_tmp, sizeof(convert_tmp), "%3.1f", lat);
+                snprintf(convert_tmp, sizeof(convert_tmp), "%3.1f", fl->oooi.lat);
                 cJSON_AddRawToObject(json_obj, "lat", convert_tmp);
-                snprintf(convert_tmp, sizeof(convert_tmp), "%4.1f", lon);
+                snprintf(convert_tmp, sizeof(convert_tmp), "%4.1f", fl->oooi.lon);
                 cJSON_AddRawToObject(json_obj, "lon", convert_tmp);
-		cJSON_AddNumberToObject(json_obj, "epu", 6 );
+		cJSON_AddNumberToObject(json_obj, "epu", fl->oooi.epu );
 
-		if(alt) cJSON_AddNumberToObject(json_obj, "alt", alt);
+		if(fl->oooi.alt) cJSON_AddNumberToObject(json_obj, "alt", fl->oooi.alt);
 	}
 }
 
-void addda(flight_t *fl, unsigned char *p, int len)
+void addfl(flight_t *fl, unsigned char *p, int len)
 {
 	int i;
 	i = 0;
@@ -270,6 +250,11 @@ void addda(flight_t *fl, unsigned char *p, int len)
 
 		if (p[i] == 0x83) {
 			memcpy(fl->oooi.da,&(p[i+2]),4);
+		}
+		if (p[i] == 0x84) {
+			getlatlon(&(p[i + 2]),&(fl->oooi.lat),&(fl->oooi.lon));
+			if(fl->oooi.lat != 0 || fl->oooi.lon != 0 ) fl->oooi.epu=6;
+			fl->oooi.alt = p[i + 5] * 1000;
 		}
 		i += 2 + slen;
 	} while (i < len);
@@ -292,13 +277,15 @@ int outxid(flight_t *fl, unsigned char *p, int len)
 			continue;
 		}
 		if (p[i] == 0xf0) {
+
+			if(fl)
+				addfl(fl,&(p[i + 3]), glen);
+
 			if(verbose)
 				outprivategr(&(p[i + 3]), glen);
 
-			if(json_obj)
-				buildxidjson(&(p[i + 3]), glen);
-
-			addda(fl,&(p[i + 3]), glen);
+			if(json_obj && fl)
+				buildxidjson(fl);
 
 			i += 3 + glen;
 			dec=1;

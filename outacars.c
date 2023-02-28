@@ -319,6 +319,12 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
                 if(oooi.gin[0]) memcpy(fl->oooi.gin,oooi.gin,5);
                 if(oooi.woff[0]) memcpy(fl->oooi.woff,oooi.woff,5);
                 if(oooi.won[0]) memcpy(fl->oooi.won,oooi.won,5);
+		if(oooi.epu) {
+			fl->oooi.epu=oooi.epu;
+			fl->oooi.lat=oooi.lat;
+			fl->oooi.lat=oooi.lon;
+		}
+		fl->oooi.alt=oooi.alt;
 	}
 
 

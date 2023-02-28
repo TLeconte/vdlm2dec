@@ -20,7 +20,7 @@
 #include <complex.h>
 #include <stdint.h>
 
-#define VDLM2DEC_VERSION "2.2"
+#define VDLM2DEC_VERSION "2.3"
 
 #define MAXNBCHANNELS 8
 
@@ -129,6 +129,5 @@ extern unsigned int reversebits(const unsigned int bits, const int n);
 extern unsigned short pppfcs16(unsigned char *cp, int len);
 extern int rs(unsigned char *data, int *eras_pos, int no_eras);
 
-extern int initNetOutput(char *Rawaddr);
 extern void vout(char *format, ...);
 extern void out(msgblk_t * blk, unsigned char *hdata, int l);

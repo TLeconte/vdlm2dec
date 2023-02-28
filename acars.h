@@ -36,7 +36,7 @@ typedef struct {
 	char gin[5];
 	char woff[5];
 	char won[5];
-	// not really oooi 
+	// not really oooi
 	float lon,lat;
 	int epu;
 	int alt;
@@ -48,6 +48,7 @@ struct flight_s {
         uint32_t addr;
         char reg[9];
         char fid[7];
+	int gnd;
         struct timeval ts,tl;
         int nbm;
         int rt,gt;

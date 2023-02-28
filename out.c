@@ -38,28 +38,41 @@ extern int jsonout;
 extern int routeout;
 extern int regout;
 extern int verbose;
-extern char *netOutputRawaddr;
+
+extern char *netOutJsonAddr;
+extern char *netOutSbsAddr;
 
 extern int outxid(flight_t *fl, unsigned char *p, int len);
 extern int outacars(flight_t *fl, unsigned char *txt, int len);
 
 cJSON *json_obj=NULL;
-static int sockfd=-1;
-static const int mdly=1800;
+
+static int sock_json=-1;
+static int sock_sbs=-1;
+
 
 static char *outbuff=NULL,*ptroutbuff;
 
-int initNetOutput(char *Rawaddr)
+static int initNetOutput(int json_sbs)
 {
 	char *raddr,*addr;
 	char *port;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
-
-	netOutputRawaddr = Rawaddr;
-        raddr=strdup(Rawaddr);
+	int sockfd;
 
 	memset(&hints, 0, sizeof hints);
+
+        if(json_sbs) {
+		if(netOutJsonAddr==NULL) return -1;
+		raddr=strdup(netOutJsonAddr);
+		hints.ai_socktype = SOCK_DGRAM;
+	} else {
+		if(netOutSbsAddr==NULL) return -1;
+		raddr=strdup(netOutSbsAddr);
+		hints.ai_socktype = SOCK_STREAM;
+	}
+
 	if (raddr[0] == '[') {
 		hints.ai_family = AF_INET6;
 		addr = raddr + 1;
@@ -86,13 +99,14 @@ int initNetOutput(char *Rawaddr)
 		}
 	}
 
-	hints.ai_socktype = SOCK_DGRAM;
 
 	if ((rv = getaddrinfo(addr, port, &hints, &servinfo)) != 0) {
 		fprintf(stderr, "Invalid/unknown address %s\n", addr);
+		free(raddr);
 		return -1;
 	}
 
+	sockfd=-1;
 	for (p = servinfo; p != NULL; p = p->ai_next) {
 		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
 		continue;
@@ -101,7 +115,6 @@ int initNetOutput(char *Rawaddr)
 		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
 			if(verbose > 1) fprintf(stderr, "failed to connect\n");
 			close(sockfd);
-			sockfd=-1;
 			continue;
 		}
 		break;
@@ -110,33 +123,73 @@ int initNetOutput(char *Rawaddr)
 	free(raddr);
 	freeaddrinfo(servinfo);
 	
-	if (sockfd == -1 ) {
-		return -1;
-	}
+        if(json_sbs) 
+		sock_json=sockfd;
+	else
+		sock_sbs=sockfd;
 
-	return 0;
+	if (sockfd == -1 ) 
+		return -1;
+	else
+		return 0;
 }
 
-static int Netwrite(const void *buf, size_t count) {
+static int Netwrite(const void *buf, size_t count,int json_sbs) {
     int res;
+    int *sockfd;
 
+    if(json_sbs)
+	    sockfd=&sock_json;
+    else
+	    sockfd=&sock_sbs;
 
-    if(sockfd == -1) {
-    	if (!netOutputRawaddr) {
-        	return -1;
-    	}
-        initNetOutput(netOutputRawaddr);
+    if(*sockfd == -1) {
+        initNetOutput(json_sbs);
     }
-    if(sockfd == -1) return -1;
+    if(*sockfd == -1) return -1;
 
-    res = write(sockfd, buf, count);
+    res = write(*sockfd, buf, count);
     if (res != count) {
-        close(sockfd);
-	sockfd = -1;
+        close(*sockfd);
+	*sockfd=-1;
     }
     return res;
 }
 
+static void outsbs(msgblk_t * blk,flight_t *fl)
+{
+	char outbuff[1024],*p;
+	struct timespec now;
+    	struct tm stTime_receive, stTime_now;
+
+	if(fl->reg[0]==0 && fl->oooi.epu==0) return;
+
+	clock_gettime(CLOCK_REALTIME, &now);
+	gmtime_r(&now.tv_sec, &stTime_now);
+        gmtime_r(&blk->tv.tv_sec, &stTime_receive);
+
+	p=outbuff;
+
+	if(fl->oooi.epu) {
+		p+=sprintf(outbuff, "MSG,3,1,1,%06X,1,", fl->addr&0Xffffff);
+	} else {
+		p+=sprintf(outbuff, "MSG,1,1,1,%06X,1,", fl->addr&0Xffffff);
+	}
+	p += sprintf(p, "%04d/%02d/%02d,", (stTime_receive.tm_year + 1900), (stTime_receive.tm_mon + 1), stTime_receive.tm_mday);
+	p += sprintf(p, "%02d:%02d:%02d.%03u,", stTime_receive.tm_hour, stTime_receive.tm_min, stTime_receive.tm_sec, (unsigned) (blk->tv.tv_usec/1000));
+	p += sprintf(p, "%04d/%02d/%02d,", (stTime_now.tm_year + 1900), (stTime_now.tm_mon + 1), stTime_now.tm_mday);
+	p += sprintf(p, "%02d:%02d:%02d.%03u", stTime_now.tm_hour, stTime_now.tm_min, stTime_now.tm_sec, (unsigned) (now.tv_nsec / 1000000U));
+	if(fl->reg[0]) p += sprintf(p, ",%s", fl->reg); else p += sprintf(p, ",");
+	if(fl->oooi.alt) p += sprintf(p, ",%d", fl->oooi.alt); else p += sprintf(p, ",");
+	p += sprintf(p, ",,"); 
+	if(fl->oooi.epu) p += sprintf(p, ",%1.6f,%1.6f", fl->oooi.lat, fl->oooi.lon); else p += sprintf(p, ",,");
+	p += sprintf(p, ",,,,,,"); 
+	if(fl->gnd) p += sprintf(p, "-1"); 
+	p += sprintf(p, "\r\n"); 
+       	Netwrite(outbuff, strlen(outbuff),0);
+	//printf("%s",outbuff);
+	//fflush(stdout);
+}
 
 static void outjson()
 {
@@ -158,9 +211,9 @@ static void outjson()
                fflush(logfd);
         }
 
-    if (netOutputRawaddr) {
-        ok=Netwrite(jsonbuf, lp+1);
-    }
+        if (netOutJsonAddr) {
+        	Netwrite(jsonbuf, lp+1,1);
+        }
 }
 
 static void buildjsonobj(unsigned int faddr,unsigned int taddr,int fromair,int isresponse,int isonground,msgblk_t * blk)
@@ -204,6 +257,7 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
 {
 	static flight_t  *flight_head=NULL;
         flight_t *fl,*fld,*flp;
+	const static int mdly=1800;
 
 	/* find aircraft */
         fl=flight_head;
@@ -224,6 +278,7 @@ static  flight_t *addFlight(uint32_t addr, struct timeval tv)
         }
 
         fl->tl=tv;
+        fl->oooi.epu=fl->oooi.alt=0;
         fl->nbm+=1;
 
         if(flp) {
@@ -328,7 +383,6 @@ void vout(char *format, ...)
 
 }
 
-
 void dumpdata(unsigned char *p, int len)
 {
 	int i, k;
@@ -432,20 +486,20 @@ static void outlinkctrl(unsigned char lc, int rep)
 
 	vout( "Frame-");
 	if (lc & 1) {
-		if (lc & 2) {
-			vout( "U: ");
-			vout( "%s\n",
-				Ufrm[rep][((lc >> 3) & 0x1c) |
-					  ((lc >> 2) & 0x3)]);
-		} else {
-			vout( "S: ");
-			vout( "Nr:%01d %s\n", (lc >> 5) & 0x7,
-				Sfrm[(lc >> 2) & 0x3]);
-		}
+		 if (lc & 2) {
+			  vout( "U: ");
+			  vout( "%s\n",
+				   Ufrm[rep][((lc >> 3) & 0x1c) |
+					      ((lc >> 2) & 0x3)]);
+		 } else {
+			  vout( "S: ");
+			  vout( "Nr:%01d %s\n", (lc >> 5) & 0x7,
+				   Sfrm[(lc >> 2) & 0x3]);
+		 }
 	} else {
-		vout( "I: ");
-		vout( "Ns:%01d Nr:%01d\n", (lc >> 1) & 0x7,
-			(lc >> 5) & 0x7);
+		 vout( "I: ");
+		 vout( "Ns:%01d Nr:%01d\n", (lc >> 1) & 0x7,
+			  (lc >> 5) & 0x7);
 	}
 }
 
@@ -460,11 +514,9 @@ static void printdate(struct timeval tv)
                 tmp.tm_hour, tmp.tm_min, tmp.tm_sec,(int)tv.tv_usec/1000);
 }
 
-
 void out(msgblk_t * blk, unsigned char *hdata, int l)
 {
 	int rep = (hdata[5] & 2) >> 1;
-	int gnd = hdata[1] & 2;
 	unsigned int faddr,taddr;
 	int dec,fromair;
 	flight_t *fl=NULL;
@@ -474,12 +526,15 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 	fromair=((faddr >> 24)==1);
 
+	/* filter bad message */
 	if(!grndmess && !fromair) return;
 	if(!emptymess && l<=13)  return;
 	if(!undecmess && fromair && ( (faddr & 0xffffff) == 0 || (faddr & 0xffffff) == 0xffffff)) return;
 
-	if(fromair)
+	if(fromair) {	
 		fl=addFlight(faddr,blk->tv);
+		fl->gnd = hdata[1] & 2;
+	}
 
 	if(verbose) {
 
@@ -491,15 +546,15 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 		vout( "%s from ", rep ? "Response" : "Command");
 		outaddr(faddr);
-		vout( "(%s) to ", gnd ? "on ground" : "airborne");
+		vout( "(%s) to ", fl->gnd ? "on ground" : "airborne");
 		outaddr(taddr);
 		vout( "\n");
 
 		outlinkctrl(hdata[9], rep);
 	}
 
-	if((jsonout || netOutputRawaddr) && !routeout)
-		buildjsonobj(faddr,taddr,fromair,rep,gnd,blk);
+	if((jsonout || netOutJsonAddr) && !routeout)
+		buildjsonobj(faddr,taddr,fromair,rep,fl->gnd,blk);
 
 	dec=0;
 
@@ -526,6 +581,7 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 	if(fl) {
 		if(routeout) routejson(fl,blk->tv);
 		if(regout) airreg(fl,blk->tv);
+        	if (netOutSbsAddr) outsbs(blk,fl);
 	}
 
 	if(json_obj)

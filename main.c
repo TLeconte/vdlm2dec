@@ -41,7 +41,8 @@ int jsonout = 0;
 int routeout = 0;
 int regout = 0;
 
-char *netOutputRawaddr = NULL;
+char *netOutJsonAddr = NULL;
+char *netOutSbsAddr = NULL;
 
 char *idstation = NULL ;
 FILE *logfd;
@@ -121,7 +122,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:i:GEUb:a")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:s:i:GEUb:a")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -156,7 +157,10 @@ int main(int argc, char **argv)
 			break;
 #endif
 		case 'j':
-			netOutputRawaddr = optarg;
+			netOutJsonAddr = optarg;
+			break;
+		case 's':
+			netOutSbsAddr = optarg;
 			break;
 		case 'J':
 			jsonout = 1;
