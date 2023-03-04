@@ -558,12 +558,12 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 	dec=0;
 
-	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
-		dec|=outacars(fl,&(hdata[13]), l - 16);
-	}
-
 	if (l >= 14 && hdata[10] == 0x82) {
 		dec|=outxid(fl,&(hdata[11]), l - 14);
+	}
+
+	if (l >= 16 && hdata[10] == 0xff && hdata[11] == 0xff && hdata[12] == 1) {
+		dec|=outacars(fl,&(hdata[13]), l - 16);
 	}
 
 	if(l>13 && dec==0 && undecmess) {

@@ -3,7 +3,7 @@ project (vdlm2dec C)
 
 add_compile_options(-Ofast -march=native )
 
-add_executable(vdlm2dec cJSON.c  crc.c  d8psk.c  label.c  main.c  outacars.c  out.c  outxid.c  rs.c  vdlm2.c  viterbi.c )
+add_executable(vdlm2dec cJSON.c  crc.c  d8psk.c  label.c  main.c  outacars.c  arincpos.c out.c  outxid.c  rs.c  vdlm2.c  viterbi.c )
 
 find_package(PkgConfig)
 if(PKG_CONFIG_FOUND)
@@ -11,6 +11,7 @@ pkg_check_modules(LIBACARS libacars-2>=2.0.0)
 if(LIBACARS_FOUND)
 message ( STATUS "Using libacars")
 add_definitions(-DHAVE_LIBACARS )
+target_sources(vdlm2dec PRIVATE arincpos.c )
 target_link_libraries(vdlm2dec ${LIBACARS_LIBRARIES})
 target_include_directories(vdlm2dec PUBLIC ${LIBACARS_INCLUDE_DIRS})
 link_directories(${LIBACARS_LIBRARY_DIRS})

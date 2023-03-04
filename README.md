@@ -35,6 +35,8 @@ For Airspy R2 / Mini:
 
  -j addr:port		send to addr:port UDP packets in json that could be read by acarsserv or other online aggregator 
 
+ -s addr:port :		send received position in sbs format output to addr:port
+
  -G :			output messages from ground station
 
  -E :			output empty messages (not really useful)
@@ -99,6 +101,14 @@ Aircraft registration csv output:
     4CA2C9,EI-DEP
     49514B,CS-TJK
     400D8B,G-EZAA
+
+Send to a remote aggregator:
+> ./vdlm2dec -q -i XX-YYYYZ -j feed.acars.io:5555 -r 0 136.725 136.775 136.825 136.875 136.975
+
+Send positions in sbs format to a local readsb:
+> ./vdlm2dec -q -s 127.0.0.1:37000 -r 0 136.725 136.775 136.825 136.875 136.975
+
+> Add --net-sbs-jaero-in-port=37000 to readsb command line
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.

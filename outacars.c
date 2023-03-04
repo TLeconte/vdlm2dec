@@ -23,18 +23,17 @@
 #include <sys/socket.h>
 #include <time.h>
 #include <netdb.h>
-#ifdef HAVE_LIBACARS
-#include <libacars/libacars.h>
-#include <libacars/acars.h>
-#include <libacars/vstring.h>
-#else
-typedef void la_proto_node;
-#endif
 
 #include "vdlm2.h"
 #include "crc.h"
 #include "acars.h"
 #include "cJSON.h"
+#ifdef HAVE_LIBACARS
+#include <libacars/libacars.h>
+extern la_proto_node *arincdecode(char *txt,char *label,char bid,oooi_t *oooi) ;
+#else
+typedef void la_proto_node;
+#endif
 
 extern int verbose;
 extern cJSON *json_obj;
@@ -291,19 +290,11 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 
 	if(label_filter(msg.label)==0) return 0;
 
-#ifdef HAVE_LIBACARS
-	if (txt[0]) {
-        	la_msg_dir direction;
-        	if(msg.bid >= '0' && msg.bid <= '9')
-                	direction = LA_MSG_DIR_AIR2GND;
-        	else
-                	direction = LA_MSG_DIR_GND2AIR;
-
-        	lanode = la_acars_decode_apps(msg.label, msg.txt, direction);
-	}
-#endif
-
 	DecodeLabel(&msg, &oooi);
+
+#ifdef HAVE_LIBACARS
+       lanode = arincdecode(msg.txt,msg.label,msg.bid,&oooi);
+#endif
 
 	if (verbose) {
 		printmsg(&msg, &oooi,lanode);

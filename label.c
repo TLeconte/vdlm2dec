@@ -250,7 +250,7 @@ static int label_16(char *txt,oooi_t *oooi)
 static int label_H1(char *txt,oooi_t *oooi)
 {
     if(strlen(txt)<20) return 0;
-    if(memcmp(txt,"#M1BPOS",7) && memcmp(txt,"#M2BPOS",7)) return 0;
+    if(memcmp(txt,"#M1BPOS",7) && memcmp(txt,"#M2BPOS",7) && memcmp(txt,"#M3BPOS",7)) return 0;
     return convpos(&(txt[7]),oooi);
 }
 static int label_17(char *txt,oooi_t *oooi)
