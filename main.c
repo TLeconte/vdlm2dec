@@ -84,19 +84,19 @@ static void usage(void)
 	fprintf(stderr, " -U :\t\t\toutput undecoded messages\n");
 	fprintf(stderr, " -b filter :\t\tfilter acars output by label (ex: -b \"H1:Q0\" : only output messages  with label H1 or Q0)\n");
 	fprintf(stderr, " -j addr:port :\t\toutput json UDP packet to addr:port\n");
-	fprintf(stderr, " -s addr:port :\t\tsbs format output to addr:port\n");
+	fprintf(stderr, " -s addr:port :\t\tioutpout position in sbs format to addr:port\n");
 	fprintf(stderr, " -l logfile :\t\toutput log (stdout by default)\n\n");
 
 #ifdef WITH_RTL
 	fprintf(stderr,
 		" -r rtldevicenumber :\tdecode from rtl dongle number rtldevicenumber.(MANDATORY parameter)\n");
 	fprintf(stderr,
-		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).By default use maximum gain\n");
+		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
-		" -g gain :\t\tset linearity gain (0 to 21).By default use maximum gain\n");
+		" -g gain :\t\tset linearity gain (0 to 21).\n");
 	fprintf(stderr,
 		" -k serial :\t\tairspy serial number to bind to in hex, ie 0xA74068C82F2E3793\n");
 #endif
