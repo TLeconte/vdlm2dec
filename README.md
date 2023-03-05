@@ -57,10 +57,10 @@ for the AirSpy device
 
  
 ## Examples
-For rtl-sdr :
+#### For rtl-sdr :
 > ./vdlm2dec -r 0 136.725 136.775 136.875 136.975 
 
-For airspy :
+#### For airspy :
 > ./vdlm2dec 136.725 136.775 136.875 136.975 
 
     [#4 (F:136.975 P:-2.1) 11/03/2018 15:52:27.259 --------------------------------
@@ -77,7 +77,7 @@ For airspy :
     Frame-I: Ns:1 Nr:0
     unknown data
     
-JSON out :
+#### JSON out :
 > ./vdlm2dec -J -r 0 136.725 136.775 136.875 136.975
 
     {"timestamp":1675586802.2075,"station_id":"TL-LFRN-VDL2","freq":136.775,"hex":"02007D","icao":131197,"toaddr":2178181,"app":    {"name":"vdlm2dec","ver":"2.1"},"mode":"2","label":"H1","block_id":"2","ack":"!","tail":"CN-ROR","flight":"ATRAM6","msgno":"D65B","text":"#DFB0400000627932100\r\nD2010000031421170\r\nF1+0304+99+6702981040+034+366+00XXXX+02-00\r\nF2+0305+99+6702981036+034+369-00XXXX+02-00\r\nG1-3920308781084308430887\r\nG2-3920308781084308430888\r\nK100111011111X110101100\r\nK2","end":true}
@@ -85,7 +85,7 @@ JSON out :
     {"timestamp":1675586807.290592,"station_id":"TL-LFRN-VDL2","freq":136.775,"hex":"02007D","icao":131197,"toaddr":2178181,"app":       {"name":"vdlm2dec","ver":"2.1"},"mode":"2","label":"H1","block_id":"3","ack":"!","tail":"CN-ROR","flight":"ATRAM6","msgno":"D65C","text":"#DFB00111011111-110101100\r\nL1018CE000000000939A8501000100007F0920000040847\r\nL2018CE000000000939B0501000200007F092000004084A\r\n"}
 
 
-Flights & Aircraft registration JSON output :
+#### Flights & Aircraft registration JSON output :
 > ./vdlm2dec -R -r 0 136.725 136.775 136.875 136.975
 
     {"timestamp":1546187157.8686321,"icao":"3C656D","tail":"D-AIKM"}
@@ -94,7 +94,7 @@ Flights & Aircraft registration JSON output :
     {"timestamp":1546187173.913542,"icao":"440395","tail":"OE-IZO"}
     {"timestamp":1546187215.3877859,"flight":"CJ8483","depa":"EGLC","dsta":"LEPA"}
 
-Aircraft registration csv output:
+#### Aircraft registration csv output:
 > ./vdlm2dec -a -r 0 136.725 136.775 136.875 136.975
     
     4D201F,9H-AEI
@@ -102,13 +102,16 @@ Aircraft registration csv output:
     49514B,CS-TJK
     400D8B,G-EZAA
 
-Send to a remote aggregator:
+#### Send to a remote aggregator:
 > ./vdlm2dec -q -i XX-YYYYZ -j feed.acars.io:5555 -r 0 136.725 136.775 136.825 136.875 136.975
 
-Send positions in sbs format to a local readsb:
+#### Send positions in sbs format to a local readsb:
 > ./vdlm2dec -q -s 127.0.0.1:37000 -r 0 136.725 136.775 136.825 136.875 136.975
 
-> Add --net-sbs-jaero-in-port=37000 to readsb command line
+Notes : 
+ * Add --net-sbs-jaero-in-port=37000 to readsb command line to receive sbs packets
+ * You could use -s and -j together :
+ > ./vdlm2dec -q -i XX-YYYYZ -s 127.0.0.1:37000 -j feed.acars.io:5555 -r 0 136.725 136.775 136.825 136.875 136.975
 
 ## Compilation
 vdlm2dec must compile directly on any modern Linux distrib.
@@ -141,33 +144,6 @@ It depends on some external libraries :
 #### For raspberry Pi and others ARM machines :
 
 The gcc compile option -march=native could not be working, so modify the add_compile_options in CMakeLists.txt to set the correct options for your platform.
-
-
-## Frequency correction for rtl-sdr
-In message header, the P field give an estimation of frequency drift in ppm :
-
-   [#4 (F:136.975 P:+03.1) 28/09/2018 09:36:17.739 --------------------------------
-
-This drift could come from transmitter, doppler effect and receiver.
-To try to estimate and compensate receiver frequency drift, first run vdlm2dec for a while logging the received messages :
-
-> ./vdlm2dec -l logmessage -r 0 136.725 136.775 136.875 136.975 
-
-then extract frequency drifts :
-
-> grep " P:" logmessage | cut -c 18-22 > ppmlog
-
-from ppmlog estimate an average, and use the opposite as -p correction parameter. Ie: if the average is +5.2 use :
-
-> ./vdlm2dec -p -5 -r 0 136.725 136.775 136.875 136.975 
-
-# Acarsserv
-
-acarsserv is a companion program for vdlm2dec. It listens to acars messages on UDP coming from one or more vdlm2dec or [acarsdec](https://github.com/TLeconte/acarsdec) processes and stores them in a sqlite database.
-
-See : [acarsserv](https://github.com/TLeconte/acarsserv)
-
-Note : vdlm2dec could only send packet over the network on json format. It does not support the acarsdec old binary format.
 
 ## Copyrights 
 vdlm2dec and acarsserv are Copyright Thierry Leconte 2015-2023
