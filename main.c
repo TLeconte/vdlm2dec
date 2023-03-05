@@ -48,11 +48,11 @@ char *idstation = NULL ;
 FILE *logfd;
 
 #ifdef WITH_RTL
-int gain = 1000;
+int gain = 450;
 int ppm = 0;
 #endif
 #ifdef WITH_AIR
-int gain = 21;
+int gain = 18;
 uint64_t airspy_serial = 0;
 #endif
 
