@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <complex.h>
 #include <stdint.h>
+#include <sys/time.h>
 
 #define VDLM2DEC_VERSION "2.3"
 
