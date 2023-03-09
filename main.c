@@ -64,7 +64,7 @@ static void usage(void)
 {
 	fprintf(stderr,
 		"vdlm2dec %s Copyright (c) 2016-2023 Thierry Leconte \n\n", VDLM2DEC_VERSION);
-	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-l logfile] [-g gain]");
+	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-s addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
 	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
 #endif
