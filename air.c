@@ -20,6 +20,7 @@
 
 #define _GNU_SOURCE
 #include <stdlib.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -44,16 +45,17 @@ static struct airspy_device* device = NULL;
 static const unsigned int r820t_hf[]={1953050,1980748,2001344,2032592,2060291,2087988};
 static const unsigned int r820t_lf[]={525548,656935,795424,898403,1186034,1502073,1715133,1853622};
 
-static unsigned int chooseFc(unsigned int minF,unsigned int maxF)
+static unsigned int chooseFc(unsigned int minF,unsigned int maxF, int filter)
 {
         unsigned int bw=maxF-minF+2*STEPRATE;
         unsigned int off=0;
         int i,j;
 
-        if(SDRINRATE == 5000000) {
+        if(filter) {
             /* This feature is specific to the R820T2 tuner in the Airspy R2 where the Mini has an R860. */
-            for(i=7;i>=0;i--)
+            for(i=7; i>=0; i--)
                 if((r820t_hf[5]-r820t_lf[i])>=bw) break;
+
             if(i<0) return 0;
 
             for(j=5;j>=0;j--)
@@ -79,7 +81,92 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	int result;
 	uint32_t i,count;
 	uint32_t * supported_samplerates;
+	uint64_t airspy_serial = 0;
+	int airspy_device_count = 0;
+	uint64_t *airspy_device_list = NULL;
 
+
+        // Request the total number of libairspy devices connected, allocate space, then request the list.
+        result = airspy_device_count = airspy_list_devices(NULL, 0);
+        if(result < 1) {
+            if(result == 0) {
+                fprintf(stderr, "No airspy devices found.\n");
+            } else {
+                fprintf(stderr, "airspy_list_devices() failed: %s (%d).\n", airspy_error_name(result), result);
+            }
+            airspy_exit();
+            return -1;
+        }
+
+        airspy_device_list = (uint64_t *)malloc(sizeof(uint64_t)*airspy_device_count);
+        if (airspy_device_list == NULL) return -1;
+        result = airspy_list_devices(airspy_device_list, airspy_device_count);
+        if (result != airspy_device_count) {
+            fprintf(stderr, "airspy_list_devices() failed.\n");
+            free(airspy_device_list);
+            airspy_exit();
+            return -1;
+        }
+
+        // clear errno to catch invalid input.
+        errno = 0;
+        // Attempt to interpret first argument as a specific device serial.
+        airspy_serial = strtoull(argv[optind], &argF, 16);
+
+        // If strtoull result is an integer from 0 to airspy_device_count:
+        //  1. Attempt to open airspy serial indicated.
+        //  2. If successful, consume argument and continue.
+        // If still no device and strtoull successfully finds a 16bit hex value, then:
+        //  1. Attempt to open a specific airspy device using value as a serialnumber.
+        //  2. If succesful, consume argument and continue.
+        // If still no device and strtoull result fails
+        //  1. Iterate over list of airspy devices and attempt to open each one.
+        //  2. If opened succesfully, do not consume argument and continue.
+        // Else:
+        //  1. Give up.
+
+        if ( (argv[optind] != argF) && (errno == 0)) {
+            if ( (airspy_serial < airspy_device_count) ) {
+                if(verbose) {
+                    fprintf(stderr, "Attempting to open airspy device slot #%lu with serial %016lx.\n", airspy_serial, airspy_device_list[airspy_serial]);
+                }
+                result = airspy_open_sn(&device, airspy_device_list[airspy_serial]);
+                if (result == AIRSPY_SUCCESS) {
+                    optind++; // consume parameter
+                }
+            } else {
+                if (verbose) {
+                    fprintf(stderr, "Attempting to open airspy serial 0x%016lx\n", airspy_serial);
+                }
+                result = airspy_open_sn(&device, airspy_serial);
+                if (result == AIRSPY_SUCCESS) {
+                    optind++; // consume parameter
+                }
+            }
+        }
+
+        if (device == NULL) {
+            for(n = 0; n < airspy_device_count; n++) {
+                if (verbose) {
+                        fprintf(stderr, "Attempting to open airspy device #%d.\n", n);
+                }
+                result = airspy_open_sn(&device, airspy_device_list[n]);
+                if (result == AIRSPY_SUCCESS) 
+                    break;
+            }
+        }
+        memset(airspy_device_list, 0, sizeof(uint64_t)*airspy_device_count);
+        free(airspy_device_list);
+        airspy_device_list = NULL;
+
+        if (device == NULL) {
+            result = airspy_open(&device);
+            if (result != AIRSPY_SUCCESS) {
+                fprintf(stderr, "Failed to open any airspy device.\n");
+                airspy_exit();
+                return -1;
+            }
+        }
 
 	/* parse args */
 	nbch = 0;
@@ -97,6 +184,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
                 if(Fd[nbch]>maxFc) maxFc= Fd[nbch];
 		nbch++;
 	};
+
 	if (nbch > MAXNBCHANNELS)
 		fprintf(stderr,
 			"WARNING: too many frequencies, taking only the first %d\n",
@@ -104,20 +192,6 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 	if (nbch == 0) {
 		fprintf(stderr, "Need a least one frequency\n");
 		return 1;
-	}
-
-        if( airspy_serial ) {
-	    if (verbose>1) {
-		fprintf(stderr, "Attempting to open airspy device 0x%016lx\n", airspy_serial);
-	    }
-	    result = airspy_open_sn(&device, airspy_serial);
-	} else {
-	    result = airspy_open(&device);
-	}
-        
-        if( result != AIRSPY_SUCCESS ) {
-		fprintf(stderr,"airspy_open() failed: %s (%d)\n", airspy_error_name(result), result);
-		return -1;
 	}
 
 	result = airspy_set_sample_type(device, AIRSPY_SAMPLE_FLOAT32_REAL);
@@ -161,7 +235,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
                 fprintf(stderr,"airspy_set_linearity_gain() failed: %s (%d)\n", airspy_error_name(result), result);
         }
 
-	Fc = chooseFc(minFc, maxFc);
+	Fc = chooseFc(minFc, maxFc, SDRINRATE==5000000);
         if (Fc == 0) {
 		fprintf(stderr,"Frequencies too far apart\n");
 		airspy_close(device);
@@ -175,7 +249,7 @@ int initAirspy(char **argv, int optind, thread_param_t * param)
 		airspy_close(device);
 		return -1;
 	}
-	if (verbose>1)
+	if (verbose)
 		fprintf(stderr, "Set freq. to %d hz\n", Fc);
 
 	/* compute mixers osc. */
