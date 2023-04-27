@@ -546,15 +546,16 @@ void out(msgblk_t * blk, unsigned char *hdata, int l)
 
 		vout( "%s from ", rep ? "Response" : "Command");
 		outaddr(faddr);
-		vout( "(%s) to ", fl->gnd ? "on ground" : "airborne");
+		vout( "(%s) to ", (fl && fl->gnd) ? "on ground" : "airborne");
 		outaddr(taddr);
 		vout( "\n");
 
 		outlinkctrl(hdata[9], rep);
 	}
 
-	if((jsonout || netOutJsonAddr) && !routeout)
-		buildjsonobj(faddr,taddr,fromair,rep,fl->gnd,blk);
+	if((jsonout || netOutJsonAddr) && !routeout) {
+		buildjsonobj(faddr,taddr,fromair,rep,(fl && fl->gnd),blk);
+    }
 
 	dec=0;
 
