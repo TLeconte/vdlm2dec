@@ -313,7 +313,7 @@ int outacars(flight_t *fl,unsigned char *txt, int len)
 		if(oooi.epu) {
 			fl->oooi.epu=oooi.epu;
 			fl->oooi.lat=oooi.lat;
-			fl->oooi.lat=oooi.lon;
+			fl->oooi.lon=oooi.lon;
 		}
 		fl->oooi.alt=oooi.alt;
 	}
