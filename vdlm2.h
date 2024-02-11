@@ -86,6 +86,7 @@ extern pthread_barrier_t Bar1, Bar2;
 
 #ifdef WITH_RTL
 extern int ppm;
+extern int bias;
 extern complex float Cbuff[RTLINBUFSZ / 2];
 #endif
 #ifdef WITH_AIR
