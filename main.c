@@ -50,6 +50,7 @@ FILE *logfd;
 #ifdef WITH_RTL
 int gain = 450;
 int ppm = 0;
+int bias = 0;
 #endif
 #ifdef WITH_AIR
 int gain = 18;
@@ -66,7 +67,7 @@ static void usage(void)
 		"vdlm2dec %s Copyright (c) 2016-2023 Thierry Leconte \n\n", VDLM2DEC_VERSION);
 	fprintf(stderr, "Usage: vdlm2dec  [-J] [-q] [-j addr:port ] [-s addr:port ] [-l logfile] [-g gain]");
 #ifdef WITH_RTL
-	fprintf(stderr, " [-p ppm] -r rtldevicenumber");
+	fprintf(stderr, " [-p ppm] [-B bias] -r rtldevicenumber");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr, " [-k airspy_serial_number]");
@@ -93,6 +94,7 @@ static void usage(void)
 	fprintf(stderr,
 		" -g gain :\t\tset rtl preamp gain in tenth of db (ie -g 90 for +9db).\n");
 	fprintf(stderr, " -p ppm :\t\tppm frequency correction\n");
+	fprintf(stderr, " -B bias :\t\tEnable (1) or Disable(0) bias tee\n");
 #endif
 #ifdef WITH_AIR
 	fprintf(stderr,
@@ -123,7 +125,7 @@ int main(int argc, char **argv)
 	nbch = 0;
 	logfd = stdout;
 
-	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:s:i:GEUb:a")) != EOF) {
+	while ((c = getopt(argc, argv, "vqrp:g:k:l:JRj:s:i:GEUb:a:B:")) != EOF) {
 		switch (c) {
 		case 'v':
 			verbose = 2;
@@ -148,6 +150,8 @@ int main(int argc, char **argv)
 		case 'g':
 			gain = atoi(optarg);
 			break;
+		case 'B':
+			bias = atoi(optarg);
 #endif
 #ifdef WITH_AIR
 		case 'g':
